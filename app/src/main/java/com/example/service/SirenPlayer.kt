@@ -1,7 +1,9 @@
 package com.example.service
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -11,8 +13,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.sin
+import kotlin.math.sign
 
-class SirenPlayer {
+class SirenPlayer(private val context: Context? = null) {
     private var playingJob: Job? = null
     private var audioTrack: AudioTrack? = null
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -22,10 +25,23 @@ class SirenPlayer {
     fun startSiren() {
         if (isPlaying()) return
 
+        // Maximize alarm audio volume if context is available
+        context?.let { ctx ->
+            try {
+                val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                audioManager?.let { am ->
+                    val maxVol = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+                    am.setStreamVolume(AudioManager.STREAM_ALARM, maxVol, 0)
+                }
+            } catch (e: Exception) {
+                Log.e("SirenPlayer", "Failed to maximize volume: ${e.message}")
+            }
+        }
+
         playingJob = scope.launch {
             try {
                 val sampleRate = 44100
-                val numSamplesPerFreq = sampleRate / 8
+                val numSamplesPerFreq = sampleRate / 10
                 val bufferSize = AudioTrack.getMinBufferSize(
                     sampleRate,
                     AudioFormat.CHANNEL_OUT_MONO,
@@ -52,25 +68,34 @@ class SirenPlayer {
 
                 audioTrack?.play()
 
-                var currentFreq = 800.0
+                var currentFreq = 650.0
                 var goingUp = true
 
                 while (isActive) {
                     val buffer = ShortArray(numSamplesPerFreq)
                     for (i in buffer.indices) {
-                        val angle = 2.0 * Math.PI * i * currentFreq / sampleRate
-                        buffer[i] = (sin(angle) * Short.MAX_VALUE * 0.9).toInt().toShort()
+                        val t = i.toDouble() / sampleRate
+                        val primaryAngle = 2.0 * Math.PI * currentFreq * t
+                        val harmonicAngle = 2.0 * Math.PI * (currentFreq * 1.5) * t
+
+                        // Mix sine + square harmonic saturation for piercing police buzzer alarm sound
+                        val sineWave = sin(primaryAngle)
+                        val harmonicWave = sin(harmonicAngle) * 0.3
+                        val squareWave = sign(sineWave) * 0.2
+                        val combined = (sineWave * 0.7 + harmonicWave + squareWave).coerceIn(-1.0, 1.0)
+
+                        buffer[i] = (combined * Short.MAX_VALUE * 0.95).toInt().toShort()
                     }
                     audioTrack?.write(buffer, 0, buffer.size)
 
                     if (goingUp) {
-                        currentFreq += 100.0
-                        if (currentFreq >= 1800.0) goingUp = false
+                        currentFreq += 120.0
+                        if (currentFreq >= 1850.0) goingUp = false
                     } else {
-                        currentFreq -= 100.0
-                        if (currentFreq <= 700.0) goingUp = true
+                        currentFreq -= 120.0
+                        if (currentFreq <= 650.0) goingUp = true
                     }
-                    delay(20)
+                    delay(15)
                 }
             } catch (e: Exception) {
                 Log.e("SirenPlayer", "Error playing siren tone: ${e.message}")

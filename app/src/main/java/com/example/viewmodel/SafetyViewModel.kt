@@ -31,7 +31,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     private val audioDao = db.audioRecordingDao()
 
     val sosManager = SosManager(application)
-    val sirenPlayer = SirenPlayer()
+    val sirenPlayer = SirenPlayer(application)
     val audioRecorder = AudioRecorder(application)
     val geminiAssistant = GeminiThreatAssistant()
 

@@ -44,7 +44,7 @@ class SosManager(private val context: Context) {
         }
 
         vibrateAlert()
-        val defaultMsg = customMessage ?: "EMERGENCY SOS ALERT! I need urgent help! My current location: $locationText. Sent via TN Kavalan Women Safety App."
+        val defaultMsg = customMessage ?: "I am in danger please help me"
         var successCount = 0
 
         val smsManager: SmsManager = try {
@@ -75,7 +75,7 @@ class SosManager(private val context: Context) {
         return if (successCount > 0) {
             "Emergency SMS alert sent to $successCount guardian(s)!"
         } else {
-            "Triggered Emergency Alert for guardians ($locationText)."
+            "Triggered Emergency Alert: 'I am in danger please help me'."
         }
     }
 
