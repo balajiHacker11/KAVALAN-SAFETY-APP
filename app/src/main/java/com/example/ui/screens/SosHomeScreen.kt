@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
@@ -51,11 +55,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.R
 import com.example.data.db.AudioRecordingEntity
 import com.example.ui.components.PanicButton
@@ -78,6 +84,27 @@ fun SosHomeScreen(
     playingAudioPath: String?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
+    val requiredPermissions = arrayOf(
+        Manifest.permission.CALL_PHONE,
+        Manifest.permission.SEND_SMS,
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+
+    fun isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        viewModel.triggerFullMasterSosAlert()
+    }
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -165,7 +192,11 @@ fun SosHomeScreen(
             ) {
                 PanicButton(
                     onClick = {
-                        viewModel.triggerFullMasterSosAlert()
+                        if (requiredPermissions.all { isPermissionGranted(it) }) {
+                            viewModel.triggerFullMasterSosAlert()
+                        } else {
+                            permissionLauncher.launch(requiredPermissions)
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -197,7 +228,13 @@ fun SosHomeScreen(
                     containerColor = CrimsonPrimary,
                     modifier = Modifier.weight(1f),
                     testTag = "action_call_police",
-                    onClick = { viewModel.triggerEmergencyCall("1091") }
+                    onClick = {
+                        if (isPermissionGranted(Manifest.permission.CALL_PHONE)) {
+                            viewModel.triggerEmergencyCall("1091")
+                        } else {
+                            permissionLauncher.launch(requiredPermissions)
+                        }
+                    }
                 )
 
                 val sirenBg by animateColorAsState(
@@ -230,7 +267,13 @@ fun SosHomeScreen(
                     containerColor = micBg,
                     modifier = Modifier.weight(1f),
                     testTag = "action_record_audio",
-                    onClick = { viewModel.toggleAudioRecording() }
+                    onClick = {
+                        if (isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
+                            viewModel.toggleAudioRecording()
+                        } else {
+                            permissionLauncher.launch(requiredPermissions)
+                        }
+                    }
                 )
 
                 QuickActionCard(
@@ -239,7 +282,13 @@ fun SosHomeScreen(
                     containerColor = SuccessGreen,
                     modifier = Modifier.weight(1f),
                     testTag = "action_sms_guardians",
-                    onClick = { viewModel.sendSosSmsToGuardians() }
+                    onClick = {
+                        if (isPermissionGranted(Manifest.permission.SEND_SMS)) {
+                            viewModel.sendSosSmsToGuardians()
+                        } else {
+                            permissionLauncher.launch(requiredPermissions)
+                        }
+                    }
                 )
             }
         }
