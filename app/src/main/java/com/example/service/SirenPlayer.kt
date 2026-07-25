@@ -22,21 +22,29 @@ class SirenPlayer(private val context: Context? = null) {
 
     fun isPlaying(): Boolean = playingJob?.isActive == true
 
-    fun startSiren() {
-        if (isPlaying()) return
-
-        // Maximize alarm audio volume if context is available
+    fun maximizeVolume() {
         context?.let { ctx ->
             try {
                 val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
                 audioManager?.let { am ->
-                    val maxVol = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-                    am.setStreamVolume(AudioManager.STREAM_ALARM, maxVol, 0)
+                    val maxAlarm = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+                    am.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm, 0)
+                    val maxMusic = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                    am.setStreamVolume(AudioManager.STREAM_MUSIC, maxMusic, 0)
+                    val maxRing = am.getStreamMaxVolume(AudioManager.STREAM_RING)
+                    am.setStreamVolume(AudioManager.STREAM_RING, maxRing, 0)
                 }
             } catch (e: Exception) {
                 Log.e("SirenPlayer", "Failed to maximize volume: ${e.message}")
             }
         }
+    }
+
+    fun startSiren() {
+        if (isPlaying()) return
+
+        // Maximize device audio volume across ALARM, MUSIC, and RING streams
+        maximizeVolume()
 
         playingJob = scope.launch {
             try {
