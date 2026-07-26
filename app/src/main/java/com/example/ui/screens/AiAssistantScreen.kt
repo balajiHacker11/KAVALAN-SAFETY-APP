@@ -44,6 +44,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +54,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ai.ThreatAnalysisResult
 import com.example.ai.ThreatLevel
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CrimsonPrimary
 import com.example.ui.theme.MagentaSecondary
@@ -73,7 +78,15 @@ fun AiAssistantScreen(
     threatResult: ThreatAnalysisResult?,
     modifier: Modifier = Modifier
 ) {
-    val quickScenarios = listOf(
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
+
+    val quickScenarios = if (currentLanguage == AppLanguage.TAMIL) listOf(
+        "இரவு 10 மணிக்கு ஆள் நடமாட்டமில்லாத தெருவில் என்னை யாரோ பின்தொடர்கிறார்கள்",
+        "ஆட்டோ ஓட்டுநர் தவறான வழியில் சென்று வண்டியை நிறுத்த மறுக்கிறார்",
+        "சென்னையில் இருட்டான வழியில் பைக் என்னை நெருக்கமாக பின்தொடர்கிறது",
+        "பேருந்து நிலையம் அருகே தெரியாத நபர் அச்சுறுத்தும் வகையில் பேசுகிறார்"
+    ) else listOf(
         "Walking alone at 10 PM in a quiet lane with someone following behind",
         "Auto driver took an unfamiliar wrong route and refuses to stop",
         "Bike tailgating me closely in a dimly lit alley in Chennai",
@@ -119,13 +132,13 @@ fun AiAssistantScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "AI Attack Threat & Escape Route Finder",
+                            text = strings.aiHeaderTitle,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "Describe your situation for real-time risk level analysis & tactical escape route steps",
+                            text = strings.aiHeaderSubtitle,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
@@ -137,8 +150,8 @@ fun AiAssistantScreen(
         // Quick Preset Scenario Chips
         item {
             Text(
-                text = "Quick Threat Scenarios",
-                style = MaterialTheme.typography.titleSmall,
+                text = strings.quickScenariosTitle,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -168,7 +181,7 @@ fun AiAssistantScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = scenario.take(35) + "...",
+                                text = if (scenario.length > 35) scenario.take(35) + "..." else scenario,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -184,7 +197,7 @@ fun AiAssistantScreen(
                 OutlinedTextField(
                     value = threatPrompt,
                     onValueChange = { viewModel.updateThreatPrompt(it) },
-                    placeholder = { Text("e.g. Walking home in Madurai and two strangers on a scooter are trailing me...") },
+                    placeholder = { Text(strings.aiInputPlaceholder) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("ai_threat_input"),
@@ -212,11 +225,11 @@ fun AiAssistantScreen(
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Evaluating Attack Threat Level...")
+                        Text(strings.evaluatingText)
                     } else {
                         Icon(Icons.Default.DirectionsRun, contentDescription = "Escape Route")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("ANALYZE RISK & GET ESCAPE ROUTE", fontWeight = FontWeight.Bold)
+                        Text(strings.analyzeBtnText, fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -3,11 +3,13 @@ package com.example.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.example.ai.GeminiThreatAssistant
 import com.example.ai.ThreatAnalysisResult
 import com.example.data.db.AppDatabase
 import com.example.data.db.AudioRecordingEntity
 import com.example.data.db.GuardianEntity
+import com.example.data.model.AppLanguage
 import com.example.data.model.PoliceStation
 import com.example.data.model.PoliceStationProvider
 import com.example.service.AudioRecorder
@@ -29,6 +31,34 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     private val db = AppDatabase.getInstance(application)
     private val guardianDao = db.guardianDao()
     private val audioDao = db.audioRecordingDao()
+
+    private val prefs = application.getSharedPreferences("tn_safety_prefs", Context.MODE_PRIVATE)
+
+    // Language State
+    private val initialLangCode = prefs.getString("selected_language", null)
+    private val _currentLanguage = MutableStateFlow(
+        if (initialLangCode == "ta") AppLanguage.TAMIL else AppLanguage.ENGLISH
+    )
+    val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
+
+    private val _showLanguageDialog = MutableStateFlow(initialLangCode == null)
+    val showLanguageDialog: StateFlow<Boolean> = _showLanguageDialog.asStateFlow()
+
+    fun selectLanguage(language: AppLanguage) {
+        _currentLanguage.value = language
+        prefs.edit().putString("selected_language", language.code).apply()
+        _showLanguageDialog.value = false
+        val msg = if (language == AppLanguage.TAMIL) "மொழி தமிழுக்கு மாற்றப்பட்டது ✅" else "Language set to English ✅"
+        showNotice(msg)
+    }
+
+    fun openLanguageSelection() {
+        _showLanguageDialog.value = true
+    }
+
+    fun closeLanguageSelection() {
+        _showLanguageDialog.value = false
+    }
 
     val sosManager = SosManager(application)
     val sirenPlayer = SirenPlayer(application)

@@ -51,7 +51,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.db.GuardianEntity
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
 import com.example.ui.theme.CrimsonPrimary
 import com.example.ui.theme.MagentaSecondary
 import com.example.ui.theme.SuccessGreen
@@ -64,6 +67,8 @@ fun GuardiansScreen(
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
 
     Box(modifier = modifier.fillMaxWidth()) {
         LazyColumn(
@@ -90,14 +95,14 @@ fun GuardiansScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Emergency Guardian Network",
+                                text = strings.guardiansHeaderTitle,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Registered guardians will receive immediate SMS alerts with your live location during SOS.",
+                            text = strings.guardiansHeaderSubtitle,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                         )
@@ -114,7 +119,7 @@ fun GuardiansScreen(
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("TEST EMERGENCY ALERT SMS NOW", fontWeight = FontWeight.Bold)
+                            Text(strings.testSmsBtn, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -127,7 +132,7 @@ fun GuardiansScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Saved Guardians (${guardians.size})",
+                        text = "${strings.savedGuardiansTitle} (${guardians.size})",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -139,7 +144,7 @@ fun GuardiansScreen(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Add")
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add New")
+                        Text(strings.addNewBtn)
                     }
                 }
             }
@@ -158,13 +163,13 @@ fun GuardiansScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "No Guardians Added Yet",
+                                text = strings.noGuardiansTitle,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Add family members or trusted friends so they receive automatic location SMS during emergency.",
+                                text = strings.noGuardiansSubtitle,
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -173,7 +178,7 @@ fun GuardiansScreen(
                                 onClick = { showAddDialog = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = CrimsonPrimary)
                             ) {
-                                Text("+ Add First Guardian")
+                                Text(strings.addFirstGuardianBtn)
                             }
                         }
                     }
@@ -182,6 +187,7 @@ fun GuardiansScreen(
                 items(guardians) { guardian ->
                     GuardianContactCard(
                         guardian = guardian,
+                        strings = strings,
                         onCall = { viewModel.triggerEmergencyCall(guardian.phone) },
                         onDelete = { viewModel.deleteGuardian(guardian) },
                         onWhatsApp = {
@@ -198,6 +204,7 @@ fun GuardiansScreen(
         // Add Guardian Dialog
         if (showAddDialog) {
             AddGuardianDialog(
+                strings = strings,
                 onDismiss = { showAddDialog = false },
                 onAdd = { name, phone, relation, isPrimary ->
                     viewModel.addGuardian(name, phone, relation, isPrimary)
@@ -211,6 +218,7 @@ fun GuardiansScreen(
 @Composable
 private fun GuardianContactCard(
     guardian: GuardianEntity,
+    strings: AppStrings.Strings,
     onCall: () -> Unit,
     onDelete: () -> Unit,
     onWhatsApp: () -> Unit
@@ -265,7 +273,7 @@ private fun GuardianContactCard(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = "PRIMARY",
+                                    text = strings.primaryLabel,
                                     color = Color.White,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Black,
@@ -311,6 +319,7 @@ private fun GuardianContactCard(
 
 @Composable
 private fun AddGuardianDialog(
+    strings: AppStrings.Strings,
     onDismiss: () -> Unit,
     onAdd: (name: String, phone: String, relation: String, isPrimary: Boolean) -> Unit
 ) {
@@ -321,13 +330,13 @@ private fun AddGuardianDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Emergency Guardian", fontWeight = FontWeight.Bold) },
+        title = { Text(strings.addGuardianDialogTitle, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Guardian Name") },
+                    label = { Text(strings.guardianNameLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -335,7 +344,7 @@ private fun AddGuardianDialog(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Mobile Number (e.g. +91 9876543210)") },
+                    label = { Text(strings.guardianPhoneLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -343,7 +352,7 @@ private fun AddGuardianDialog(
                 OutlinedTextField(
                     value = relation,
                     onValueChange = { relation = it },
-                    label = { Text("Relationship (e.g. Mother, Father, Spouse)") },
+                    label = { Text(strings.guardianRelationLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -360,7 +369,7 @@ private fun AddGuardianDialog(
                         colors = CheckboxDefaults.colors(checkedColor = CrimsonPrimary)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Set as Primary Contact", fontSize = 13.sp)
+                    Text(strings.setPrimaryContact, fontSize = 13.sp)
                 }
             }
         },
@@ -370,12 +379,12 @@ private fun AddGuardianDialog(
                 enabled = name.isNotBlank() && phone.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = CrimsonPrimary)
             ) {
-                Text("Save Guardian")
+                Text(strings.saveGuardianBtn)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelBtn)
             }
         }
     )

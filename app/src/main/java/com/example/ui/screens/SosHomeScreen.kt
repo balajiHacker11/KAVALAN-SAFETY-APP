@@ -62,6 +62,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.remember
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
 import com.example.R
 import com.example.data.db.AudioRecordingEntity
 import com.example.ui.components.PanicButton
@@ -85,6 +89,8 @@ fun SosHomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
 
     val requiredPermissions = arrayOf(
         Manifest.permission.CALL_PHONE,
@@ -157,7 +163,7 @@ fun SosHomeScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "TAMIL NADU 24/7 ACTIVE",
+                                        text = strings.sosBannerTag,
                                         color = Color.White,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold
@@ -167,13 +173,13 @@ fun SosHomeScreen(
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Tamil Nadu Women Police SOS Guard",
+                            text = strings.sosBannerTitle,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = "Direct connection to 1091 / 112 & Registered Guardians",
+                            text = strings.sosBannerSubtitle,
                             color = Color.White.copy(alpha = 0.85f),
                             fontSize = 12.sp
                         )
@@ -191,6 +197,8 @@ fun SosHomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 PanicButton(
+                    mainText = if (currentLanguage == AppLanguage.TAMIL) "அவசரம்" else "SOS",
+                    subText = if (currentLanguage == AppLanguage.TAMIL) "உதவிக்கு அழுத்தவும்" else "TAP FOR HELP",
                     onClick = {
                         if (requiredPermissions.all { isPermissionGranted(it) }) {
                             viewModel.triggerFullMasterSosAlert()
@@ -201,7 +209,7 @@ fun SosHomeScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Press button to call 1091, alert Guardians, sound Siren & Record Audio",
+                    text = strings.sosInstructionText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -212,7 +220,7 @@ fun SosHomeScreen(
         // Action Quick Access Buttons Grid
         item {
             Text(
-                text = "Emergency Quick Controls",
+                text = strings.quickControlsTitle,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -223,7 +231,7 @@ fun SosHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QuickActionCard(
-                    title = "Call Police\n1091",
+                    title = strings.callPoliceAction,
                     icon = Icons.Default.Call,
                     containerColor = CrimsonPrimary,
                     modifier = Modifier.weight(1f),
@@ -242,7 +250,7 @@ fun SosHomeScreen(
                     label = "siren_color"
                 )
                 QuickActionCard(
-                    title = if (isSirenActive) "STOP\nSiren" else "Loud Siren\nAlarm",
+                    title = if (isSirenActive) strings.stopSirenAction else strings.loudSirenAction,
                     icon = if (isSirenActive) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
                     containerColor = sirenBg,
                     modifier = Modifier.weight(1f),
@@ -262,7 +270,7 @@ fun SosHomeScreen(
                     label = "mic_color"
                 )
                 QuickActionCard(
-                    title = if (isRecordingAudio) "Stop Audio\nRecord" else "Record Audio\nEvidence",
+                    title = if (isRecordingAudio) strings.stopAudioAction else strings.recordAudioAction,
                     icon = if (isRecordingAudio) Icons.Default.MicOff else Icons.Default.Mic,
                     containerColor = micBg,
                     modifier = Modifier.weight(1f),
@@ -277,7 +285,7 @@ fun SosHomeScreen(
                 )
 
                 QuickActionCard(
-                    title = "SMS Alert\nGuardians",
+                    title = strings.smsGuardiansAction,
                     icon = Icons.Default.Send,
                     containerColor = SuccessGreen,
                     modifier = Modifier.weight(1f),
@@ -324,7 +332,7 @@ fun SosHomeScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "RECORDING EVIDENCE AUDIO...",
+                                    text = strings.recordingEvidenceHeader,
                                     color = CrimsonPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
@@ -346,7 +354,7 @@ fun SosHomeScreen(
                         ) {
                             Icon(Icons.Default.Stop, contentDescription = "Stop")
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("STOP")
+                            Text(strings.stopBtn)
                         }
                     }
                 }
@@ -357,7 +365,7 @@ fun SosHomeScreen(
         if (audioRecordings.isNotEmpty()) {
             item {
                 Text(
-                    text = "Saved Audio Evidence (${audioRecordings.size})",
+                    text = "${strings.savedAudioHeader} (${audioRecordings.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -376,7 +384,7 @@ fun SosHomeScreen(
         // Quick Emergency Helplines Section
         item {
             Text(
-                text = "Tamil Nadu & National Helplines",
+                text = strings.helplinesTitle,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -384,27 +392,27 @@ fun SosHomeScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 HelplineBarItem(
-                    name = "TN Women Police Helpline",
+                    name = strings.helplineTnPolice,
                     number = "1091",
-                    description = "24/7 Immediate Tamil Nadu Women Distress Helpline",
+                    description = strings.helplineTnPoliceDesc,
                     onClick = { viewModel.triggerEmergencyCall("1091") }
                 )
                 HelplineBarItem(
-                    name = "Emergency Response System",
+                    name = strings.helplineErs,
                     number = "112",
-                    description = "National Emergency Number (Police, Ambulance, Fire)",
+                    description = strings.helplineErsDesc,
                     onClick = { viewModel.triggerEmergencyCall("112") }
                 )
                 HelplineBarItem(
-                    name = "Childline / Girls Safety",
+                    name = strings.helplineChild,
                     number = "1098",
-                    description = "24/7 Child and Girl Child Emergency Helpline",
+                    description = strings.helplineChildDesc,
                     onClick = { viewModel.triggerEmergencyCall("1098") }
                 )
                 HelplineBarItem(
-                    name = "National Commission for Women",
+                    name = strings.helplineNcw,
                     number = "7827170170",
-                    description = "24/7 NCW Helpline for Women in Distress",
+                    description = strings.helplineNcwDesc,
                     onClick = { viewModel.triggerEmergencyCall("7827170170") }
                 )
             }

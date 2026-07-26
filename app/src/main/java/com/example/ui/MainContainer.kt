@@ -54,6 +54,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Language
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
+import com.example.ui.components.LanguageSelectionDialog
 import com.example.ui.screens.AiAssistantScreen
 import com.example.ui.screens.GuardiansScreen
 import com.example.ui.screens.PoliceStationsScreen
@@ -89,11 +94,23 @@ fun MainContainer(
 
     val userNotice by viewModel.userNotice.collectAsStateWithLifecycle()
 
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val showLanguageDialog by viewModel.showLanguageDialog.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
+
     LaunchedEffect(userNotice) {
         userNotice?.let { notice ->
             snackbarHostState.showSnackbar(notice)
             viewModel.clearNotice()
         }
+    }
+
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = currentLanguage,
+            onLanguageSelected = { lang -> viewModel.selectLanguage(lang) },
+            onDismiss = { viewModel.closeLanguageSelection() }
+        )
     }
 
     Scaffold(
@@ -112,9 +129,9 @@ fun MainContainer(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "TN Kavalan SOS",
+                            text = strings.appTitle,
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp
+                            fontSize = 17.sp
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Surface(
@@ -132,13 +149,42 @@ fun MainContainer(
                     }
                 },
                 actions = {
+                    // Language Switcher Chip Button
+                    Surface(
+                        onClick = { viewModel.openLanguageSelection() },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .testTag("top_app_bar_language_switcher")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = strings.selectLanguage,
+                                tint = CrimsonPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (currentLanguage == AppLanguage.TAMIL) "தமிழ்" else "EN",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = CrimsonPrimary
+                            )
+                        }
+                    }
+
                     IconButton(
                         onClick = { viewModel.triggerEmergencyCall("1091") },
                         modifier = Modifier.testTag("top_app_bar_call_1091")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Call,
-                            contentDescription = "Call Police 1091",
+                            contentDescription = strings.topAppBarCall,
                             tint = CrimsonPrimary
                         )
                     }
@@ -156,8 +202,8 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Warning, contentDescription = "SOS") },
-                    label = { Text("SOS", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.Warning, contentDescription = strings.tabSos) },
+                    label = { Text(strings.tabSos, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CrimsonPrimary,
                         selectedTextColor = CrimsonPrimary,
@@ -169,8 +215,8 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "AI Escape") },
-                    label = { Text("AI Escape", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = strings.tabAi) },
+                    label = { Text(strings.tabAi, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MagentaSecondary,
                         selectedTextColor = MagentaSecondary,
@@ -182,8 +228,8 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.LocalPolice, contentDescription = "AWPS Police") },
-                    label = { Text("AWPS Police", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.LocalPolice, contentDescription = strings.tabAwps) },
+                    label = { Text(strings.tabAwps, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CrimsonPrimary,
                         selectedTextColor = CrimsonPrimary,
@@ -195,8 +241,8 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 3,
                     onClick = { selectedTab = 3 },
-                    icon = { Icon(Icons.Default.People, contentDescription = "Guardians") },
-                    label = { Text("Guardians", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.People, contentDescription = strings.tabGuardians) },
+                    label = { Text(strings.tabGuardians, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CrimsonPrimary,
                         selectedTextColor = CrimsonPrimary,
@@ -208,8 +254,8 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 4,
                     onClick = { selectedTab = 4 },
-                    icon = { Icon(Icons.Default.MenuBook, contentDescription = "Safety Guide") },
-                    label = { Text("Guide", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.MenuBook, contentDescription = strings.tabGuide) },
+                    label = { Text(strings.tabGuide, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CrimsonPrimary,
                         selectedTextColor = CrimsonPrimary,
@@ -260,7 +306,7 @@ fun MainContainer(
                     viewModel = viewModel,
                     guardians = guardians
                 )
-                4 -> SafetyGuideScreen()
+                4 -> SafetyGuideScreen(viewModel = viewModel)
             }
         }
     }

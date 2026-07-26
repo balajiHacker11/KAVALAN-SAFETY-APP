@@ -40,6 +40,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +50,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
 import com.example.data.model.PoliceStation
 import com.example.data.model.PoliceStationProvider
 import com.example.ui.theme.CrimsonPrimary
@@ -63,6 +68,8 @@ fun PoliceStationsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
 
     LazyColumn(
         modifier = modifier
@@ -74,12 +81,12 @@ fun PoliceStationsScreen(
 
         item {
             Text(
-                text = "TN All Women Police Stations (AWPS)",
+                text = strings.awpsTitle,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Search and contact 24/7 AWPS stations across Tamil Nadu",
+                text = strings.awpsSubtitle,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
@@ -90,7 +97,7 @@ fun PoliceStationsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.updateStationSearch(it) },
-                placeholder = { Text("Search by station, district, or pincode...") },
+                placeholder = { Text(strings.awpsSearchPlaceholder) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -131,7 +138,7 @@ fun PoliceStationsScreen(
 
         item {
             Text(
-                text = "Found ${filteredStations.size} AWPS Station(s)",
+                text = "${filteredStations.size} ${strings.awpsFoundCount}",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -142,6 +149,7 @@ fun PoliceStationsScreen(
         items(filteredStations) { station ->
             PoliceStationCard(
                 station = station,
+                strings = strings,
                 onCall = { viewModel.triggerEmergencyCall(station.phone) },
                 onOpenMap = { openMapDirections(context, station) }
             )
@@ -154,6 +162,7 @@ fun PoliceStationsScreen(
 @Composable
 private fun PoliceStationCard(
     station: PoliceStation,
+    strings: AppStrings.Strings,
     onCall: () -> Unit,
     onOpenMap: () -> Unit
 ) {
@@ -224,7 +233,7 @@ private fun PoliceStationCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Jurisdiction: ${station.jurisdiction}",
+                    text = "${strings.jurisdictionPrefix}${station.jurisdiction}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
@@ -245,7 +254,7 @@ private fun PoliceStationCard(
                 ) {
                     Icon(Icons.Default.Call, contentDescription = "Call", modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Call Station")
+                    Text(strings.callStationBtn)
                 }
 
                 OutlinedButton(
@@ -256,7 +265,7 @@ private fun PoliceStationCard(
                 ) {
                     Icon(Icons.Default.Map, contentDescription = "Directions", modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Directions")
+                    Text(strings.directionsBtn)
                 }
             }
         }

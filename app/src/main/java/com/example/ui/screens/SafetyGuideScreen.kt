@@ -47,17 +47,25 @@ import com.example.R
 import com.example.data.model.LegalRight
 import com.example.data.model.SafetyChecklist
 import com.example.data.model.SafetyGuideProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.AppLanguage
+import com.example.data.model.AppStrings
 import com.example.data.model.SelfDefenseTechnique
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CrimsonPrimary
 import com.example.ui.theme.MagentaSecondary
+import com.example.viewmodel.SafetyViewModel
 
 @Composable
 fun SafetyGuideScreen(
+    viewModel: SafetyViewModel,
     modifier: Modifier = Modifier
 ) {
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
+
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Self-Defense Moves", "Travel Safety", "Rights & Laws")
+    val tabs = listOf(strings.tabSelfDefense, strings.tabTravelSafety, strings.tabLegalRights)
 
     LazyColumn(
         modifier = modifier
@@ -94,13 +102,13 @@ fun SafetyGuideScreen(
                             .align(Alignment.BottomStart)
                     ) {
                         Text(
-                            text = "Women Tactical Safety Guide",
+                            text = strings.guideHeaderTitle,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = "Essential moves, transit rules, and legal protections",
+                            text = strings.guideHeaderSubtitle,
                             color = Color.White.copy(alpha = 0.85f),
                             fontSize = 12.sp
                         )

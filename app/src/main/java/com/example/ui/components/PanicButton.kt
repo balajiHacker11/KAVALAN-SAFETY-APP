@@ -42,7 +42,9 @@ import com.example.ui.theme.CrimsonPrimary
 @Composable
 fun PanicButton(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mainText: String = "SOS",
+    subText: String = "TAP FOR HELP"
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "sos_pulse")
     val scalePulse by infiniteTransition.animateFloat(
@@ -120,14 +122,14 @@ fun PanicButton(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "SOS",
+                    text = mainText,
                     color = Color.White,
-                    fontSize = 28.sp,
+                    fontSize = if (mainText.length > 5) 20.sp else 28.sp,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp
+                    letterSpacing = 1.sp
                 )
                 Text(
-                    text = "TAP FOR HELP",
+                    text = subText,
                     color = Color.White.copy(alpha = 0.9f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold

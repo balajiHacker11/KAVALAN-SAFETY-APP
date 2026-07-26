@@ -1,5 +1,5 @@
 {
-  "name": "TN Kavalan - Women Safety",
+  "name": "TN Kavalan SOS",
   "description": "Tamil Nadu Women Safety SOS app with direct emergency calls, siren, evidence recorder, AWPS directory, and AI escape route assistant.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
