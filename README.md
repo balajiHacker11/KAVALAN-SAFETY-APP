@@ -56,17 +56,6 @@ app/
 
 ---
 
- Permissions
-
-Depending on implementation, the app may require:
-
-* Internet
-* Location
-* Phone
-* SMS *(if applicable)*
-* Notifications
-
-Only request permissions that are necessary for your implementation.
 
 ---
  Configuration
