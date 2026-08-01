@@ -1,6 +1,6 @@
 {
-  "name": "TN Kavalan SOS",
-  "description": "Tamil Nadu Women Safety SOS app with direct emergency calls, siren, evidence recorder, AWPS directory, and AI escape route assistant.",
+  "name": "Sentinel AI",
+  "description": "Sentinel AI - Intelligent Women Safety & Emergency SOS Assistant with AI Escape route intelligence, real-time voice communication, parameterized threat detection, automated guardian audio alerts, and police station directories.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

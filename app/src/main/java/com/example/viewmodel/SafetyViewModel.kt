@@ -4,17 +4,29 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import androidx.core.content.FileProvider
 import com.example.ai.GeminiThreatAssistant
+import com.example.ai.KeywordThreatAnalyzer
+import com.example.ai.ParameterizedAnalysisResult
 import com.example.ai.ThreatAnalysisResult
+import com.example.ai.ThreatLevel
 import com.example.data.db.AppDatabase
 import com.example.data.db.AudioRecordingEntity
 import com.example.data.db.GuardianEntity
+import com.example.data.db.IncidentEvidenceEntity
 import com.example.data.model.AppLanguage
 import com.example.data.model.PoliceStation
 import com.example.data.model.PoliceStationProvider
 import com.example.service.AudioRecorder
+import com.example.service.CameraCaptureManager
+import com.example.service.ScreamDetector
 import com.example.service.SirenPlayer
 import com.example.service.SosManager
+import com.example.service.SpeechToTextManager
+import com.example.service.TextToSpeechManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +43,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     private val db = AppDatabase.getInstance(application)
     private val guardianDao = db.guardianDao()
     private val audioDao = db.audioRecordingDao()
+    private val evidenceDao = db.evidenceDao()
 
     private val prefs = application.getSharedPreferences("tn_safety_prefs", Context.MODE_PRIVATE)
 
@@ -64,6 +77,18 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     val sirenPlayer = SirenPlayer(application)
     val audioRecorder = AudioRecorder(application)
     val geminiAssistant = GeminiThreatAssistant()
+    val screamDetector = ScreamDetector(application)
+    val cameraCaptureManager = CameraCaptureManager(application)
+    val speechToTextManager = SpeechToTextManager(application)
+    val textToSpeechManager = TextToSpeechManager(application)
+
+    // Speech & Voice State
+    val isVoiceListening: StateFlow<Boolean> = speechToTextManager.isListening
+    val isSpeakingTts: StateFlow<Boolean> = textToSpeechManager.isSpeaking
+
+    // Parameterized Threat Analysis State
+    private val _parameterizedResult = MutableStateFlow<ParameterizedAnalysisResult?>(null)
+    val parameterizedResult: StateFlow<ParameterizedAnalysisResult?> = _parameterizedResult.asStateFlow()
 
     // Database flows
     val guardiansList: StateFlow<List<GuardianEntity>> = guardianDao.getAllGuardians()
@@ -71,6 +96,22 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
     val audioRecordingsList: StateFlow<List<AudioRecordingEntity>> = audioDao.getAllRecordings()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val incidentEvidencesList: StateFlow<List<IncidentEvidenceEntity>> = evidenceDao.getAllEvidences()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Scream detection & alert dialog state
+    private val _isScreamListening = MutableStateFlow(false)
+    val isScreamListening: StateFlow<Boolean> = _isScreamListening.asStateFlow()
+
+    private val _showScreamAlertDialog = MutableStateFlow(false)
+    val showScreamAlertDialog: StateFlow<Boolean> = _showScreamAlertDialog.asStateFlow()
+
+    init {
+        screamDetector.setScreamListener {
+            onScreamOrDistressDetected()
+        }
+    }
 
     // Siren state
     private val _isSirenActive = MutableStateFlow(false)
@@ -215,7 +256,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun stopAudioEvidenceRecording() {
+    fun stopAudioEvidenceRecording(): File? {
         recordingTimerJob?.cancel()
         recordingTimerJob = null
 
@@ -237,6 +278,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         } else {
             showNotice("Audio recording stopped")
         }
+        return file
     }
 
     fun playRecording(recording: AudioRecordingEntity) {
@@ -307,20 +349,198 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         _threatPrompt.value = text
     }
 
+    fun startVoiceInput() {
+        textToSpeechManager.stop()
+        speechToTextManager.startListening(_currentLanguage.value) { spokenText ->
+            _threatPrompt.value = spokenText
+            showNotice("🎙️ Heard: \"$spokenText\"")
+            evaluateThreat(spokenText)
+        }
+    }
+
+    fun stopVoiceInput() {
+        speechToTextManager.stopListening()
+    }
+
+    fun speakTacticalGuidance(text: String) {
+        textToSpeechManager.speak(text, _currentLanguage.value)
+    }
+
+    fun stopTtsSpeech() {
+        textToSpeechManager.stop()
+    }
+
     fun evaluateThreat(scenarioOverride: String? = null) {
         val prompt = scenarioOverride ?: _threatPrompt.value
         if (prompt.isBlank()) {
-            showNotice("Please describe your current situation or select a quick scenario.")
+            showNotice("Please speak or type your current situation, or select a quick scenario.")
             return
         }
 
         _isEvaluatingThreat.value = true
         _threatPrompt.value = prompt
 
+        val isTa = _currentLanguage.value == AppLanguage.TAMIL
+        val paramResult = KeywordThreatAnalyzer.analyze(prompt, isTamil = isTa)
+        _parameterizedResult.value = paramResult
+
         viewModelScope.launch {
-            val result = geminiAssistant.evaluateAttackThreat(prompt)
-            _threatResult.value = result
+            val geminiResult = geminiAssistant.evaluateAttackThreat(prompt)
+            _threatResult.value = geminiResult
             _isEvaluatingThreat.value = false
+
+            // Auto-speak guidance via TTS for fast voice response
+            val spokenSummary = geminiResult.summary
+            val firstStep = geminiResult.immediateEscapeSteps.firstOrNull() ?: ""
+            val fullSpeech = "$spokenSummary $firstStep"
+            textToSpeechManager.speak(fullSpeech, _currentLanguage.value)
+        }
+    }
+
+    fun autoRecordVoiceAlertToGuardians(context: Context) {
+        if (_isRecordingAudio.value) {
+            stopAudioEvidenceRecording()
+            showNotice("Voice recording stopped.")
+            return
+        }
+
+        startAudioEvidenceRecording()
+        showNotice("🎙️ Recording 10-sec Voice Alert for Guardians...")
+
+        viewModelScope.launch {
+            delay(10000) // Record 10 seconds
+            if (_isRecordingAudio.value) {
+                val recordedFile = stopAudioEvidenceRecording()
+                val guardians = guardiansList.value
+                val smsResult = sosManager.sendEmergencySmsToGuardians(
+                    guardians,
+                    customMessage = "🚨 AUTOMATIC VOICE EMERGENCY ALERT DETECTED! Live Location link included."
+                )
+
+                if (recordedFile != null && recordedFile.exists()) {
+                    shareEvidenceToGuardians(context, recordedFile.absolutePath)
+                } else {
+                    showNotice("🚨 Emergency SMS sent to guardians: $smsResult")
+                }
+            }
+        }
+    }
+
+    // --- SCREAM DETECTOR & INCIDENT PHOTO ACTIONS ---
+
+    fun toggleScreamDetection() {
+        if (_isScreamListening.value) {
+            screamDetector.stopListening()
+            _isScreamListening.value = false
+            showNotice("Scream Detector Paused")
+        } else {
+            screamDetector.startListening()
+            _isScreamListening.value = true
+            showNotice("🎙️ 24/7 Scream & HELP Voice Detector Active!")
+        }
+    }
+
+    private fun onScreamOrDistressDetected() {
+        // 1. Trigger haptic vibration feedback
+        screamDetector.triggerHapticFeedback()
+
+        // 2. Automatically capture instant camera photo evidence
+        val photoFile = cameraCaptureManager.captureIncidentPhoto("Distress Scream Location - TN")
+        if (photoFile != null) {
+            val entity = IncidentEvidenceEntity(
+                title = "Scream Triggered Incident Photo",
+                mediaType = "PHOTO",
+                filePath = photoFile.absolutePath
+            )
+            viewModelScope.launch {
+                evidenceDao.insertEvidence(entity)
+            }
+        }
+
+        // 3. Start audio recording if not already active
+        if (!_isRecordingAudio.value) {
+            startAudioEvidenceRecording()
+        }
+
+        // 4. Show high priority emergency dialog on screen
+        _showScreamAlertDialog.value = true
+    }
+
+    fun dismissScreamDialog() {
+        _showScreamAlertDialog.value = false
+        screamDetector.resetScreamState()
+    }
+
+    fun captureIncidentPhoto() {
+        sosManager.vibrateAlert()
+        val file = cameraCaptureManager.captureIncidentPhoto("Live Incident Snapshot - TN")
+        if (file != null && file.exists()) {
+            val count = incidentEvidencesList.value.size + 1
+            val entity = IncidentEvidenceEntity(
+                title = "Camera Snapshot #$count",
+                mediaType = "PHOTO",
+                filePath = file.absolutePath
+            )
+            viewModelScope.launch {
+                evidenceDao.insertEvidence(entity)
+                showNotice("📸 Incident Camera Photo Captured & Saved!")
+            }
+        } else {
+            showNotice("Unable to capture camera snapshot")
+        }
+    }
+
+    fun shareEvidenceToGuardians(context: Context, filePath: String) {
+        try {
+            val file = File(filePath)
+            if (!file.exists()) {
+                showNotice("Evidence file not found!")
+                return
+            }
+
+            val uri = try {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+            } catch (e: Exception) {
+                Uri.fromFile(file)
+            }
+
+            val isPhoto = filePath.endsWith(".jpg") || filePath.endsWith(".png")
+            val mimeType = if (isPhoto) "image/*" else "audio/*"
+            val text = "🚨 TN KAVALAN INCIDENT EVIDENCE ALERT!\nLocation: Chennai, Tamil Nadu\nRecorded: ${file.name}"
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, text)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+
+            val chooser = Intent.createChooser(intent, "Share Incident Evidence to Guardians")
+            chooser.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            // Fallback: SMS share text to guardians
+            val guardians = guardiansList.value
+            val result = sosManager.sendEmergencySmsToGuardians(guardians, customMessage = "🚨 INCIDENT EVIDENCE RECORDED! File: ${File(filePath).name}")
+            showNotice(result)
+        }
+    }
+
+    fun deleteEvidence(evidence: IncidentEvidenceEntity) {
+        viewModelScope.launch {
+            try {
+                val file = File(evidence.filePath)
+                if (file.exists()) file.delete()
+            } catch (e: Exception) {
+                // Ignore delete errors
+            }
+            evidenceDao.deleteEvidence(evidence)
+            showNotice("Deleted incident evidence")
         }
     }
 
@@ -328,6 +548,9 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         super.onCleared()
         sirenPlayer.stopSiren()
         audioRecorder.stopPlayback()
+        screamDetector.stopListening()
+        speechToTextManager.stopListening()
+        textToSpeechManager.shutdown()
         if (_isRecordingAudio.value) {
             audioRecorder.stopRecording()
         }

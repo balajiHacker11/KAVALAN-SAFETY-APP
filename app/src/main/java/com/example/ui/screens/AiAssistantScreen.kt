@@ -1,6 +1,12 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -19,7 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,9 +33,15 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VolumeMute
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +49,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -49,12 +61,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ai.ParameterizedAnalysisResult
 import com.example.ai.ThreatAnalysisResult
 import com.example.ai.ThreatLevel
 import com.example.data.model.AppLanguage
@@ -78,8 +93,14 @@ fun AiAssistantScreen(
     threatResult: ThreatAnalysisResult?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
     val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
+
+    val isVoiceListening by viewModel.isVoiceListening.collectAsStateWithLifecycle()
+    val isSpeakingTts by viewModel.isSpeakingTts.collectAsStateWithLifecycle()
+    val isRecordingAudio by viewModel.isRecordingAudio.collectAsStateWithLifecycle()
+    val parameterizedResult by viewModel.parameterizedResult.collectAsStateWithLifecycle()
 
     val quickScenarios = if (currentLanguage == AppLanguage.TAMIL) listOf(
         "இரவு 10 மணிக்கு ஆள் நடமாட்டமில்லாத தெருவில் என்னை யாரோ பின்தொடர்கிறார்கள்",
@@ -101,47 +122,167 @@ fun AiAssistantScreen(
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
-        // AI Header
+        // AI Sentinel Header Banner
         item {
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MagentaSecondary.copy(alpha = 0.12f)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, MagentaSecondary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                    .border(1.5.dp, MagentaSecondary.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
             ) {
-                Row(
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(MagentaSecondary, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "Sentinel AI",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = strings.aiHeaderTitle,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Text(
+                                    text = strings.aiHeaderSubtitle,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+
+                        // Mute / Speaker Toggle Button
+                        IconButton(
+                            onClick = {
+                                if (isSpeakingTts) {
+                                    viewModel.stopTtsSpeech()
+                                } else {
+                                    val textToSay = threatResult?.summary ?: strings.aiHeaderSubtitle
+                                    viewModel.speakTacticalGuidance(textToSay)
+                                }
+                            },
+                            modifier = Modifier.testTag("ai_tts_toggle_button")
+                        ) {
+                            Icon(
+                                imageVector = if (isSpeakingTts) Icons.Default.VolumeUp else Icons.Default.VolumeMute,
+                                contentDescription = "Speaker",
+                                tint = if (isSpeakingTts) CrimsonPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Voice Assistant Mic Pulse & Auto Record Controls
+        item {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(MagentaSecondary, CircleShape),
-                        contentAlignment = Alignment.Center
+                    Text(
+                        text = strings.voiceInputBtn,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "AI Assistant",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                        // Voice Assistant Mic Button
+                        VoiceMicPulseButton(
+                            isListening = isVoiceListening,
+                            onMicClick = {
+                                if (isVoiceListening) {
+                                    viewModel.stopVoiceInput()
+                                } else {
+                                    viewModel.startVoiceInput()
+                                }
+                            }
                         )
+
+                        // Auto Voice Alert to Guardians Button
+                        Surface(
+                            onClick = { viewModel.autoRecordVoiceAlertToGuardians(context) },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isRecordingAudio) CrimsonPrimary else SuccessGreen,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 16.dp)
+                                .testTag("auto_voice_guardian_alert_button")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isRecordingAudio) Icons.Default.RecordVoiceOver else Icons.Default.Mic,
+                                    contentDescription = "Voice Record to Guardians",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isRecordingAudio) "RECORDING (10s)..." else strings.autoVoiceGuardianBtn,
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = strings.aiHeaderTitle,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = strings.aiHeaderSubtitle,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
+
+                    if (isVoiceListening) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.GraphicEq,
+                                contentDescription = null,
+                                tint = CrimsonPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.voiceInputListening,
+                                color = CrimsonPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 }
             }
@@ -235,13 +376,64 @@ fun AiAssistantScreen(
             }
         }
 
+        // Parameterized Keyword Threat Matrix Badge
+        if (parameterizedResult != null && parameterizedResult!!.detectedParameters.isNotEmpty()) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = null,
+                                tint = CrimsonPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.parameterizedKeywordsTitle,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = CrimsonPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            parameterizedResult!!.detectedParameters.forEach { param ->
+                                Surface(
+                                    color = CrimsonPrimary.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ ${param.categoryName} (${param.matchedKeywords.joinToString(",")})",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = CrimsonPrimary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // AI Threat Analysis Result
         if (threatResult != null) {
             item {
                 ThreatResultCard(
-                    result = threatResult,
+                    result = threatResult!!,
                     onCallPolice = { viewModel.triggerEmergencyCall("1091") },
-                    onSendSms = { viewModel.sendSosSmsToGuardians() }
+                    onSendSms = { viewModel.sendSosSmsToGuardians() },
+                    onSoundSiren = { viewModel.triggerFullMasterSosAlert() }
                 )
             }
         }
@@ -251,10 +443,56 @@ fun AiAssistantScreen(
 }
 
 @Composable
+private fun VoiceMicPulseButton(
+    isListening: Boolean,
+    onMicClick: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isListening) 1.25f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
+    Box(contentAlignment = Alignment.Center) {
+        if (isListening) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .scale(pulseScale)
+                    .background(CrimsonPrimary.copy(alpha = 0.3f), CircleShape)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .background(if (isListening) CrimsonPrimary else MagentaSecondary)
+                .clickable { onMicClick() }
+                .testTag("ai_voice_assistant_mic_button"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
+                contentDescription = "Voice Mic",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun ThreatResultCard(
     result: ThreatAnalysisResult,
     onCallPolice: () -> Unit,
-    onSendSms: () -> Unit
+    onSendSms: () -> Unit,
+    onSoundSiren: () -> Unit
 ) {
     val (levelColor, levelTitle) = when (result.threatLevel) {
         ThreatLevel.LOW -> RiskLowGreen to "LOW RISK"
@@ -329,7 +567,7 @@ private fun ThreatResultCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Threat Analysis",
+                text = "Threat Assessment Summary",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onBackground
@@ -437,7 +675,7 @@ private fun ThreatResultCard(
             // Action Triggers inside AI Result
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Button(
                     onClick = onCallPolice,
@@ -445,9 +683,9 @@ private fun ThreatResultCard(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Call, contentDescription = "Call", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Call, contentDescription = "Call", modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("CALL 1091", fontWeight = FontWeight.Bold)
+                    Text("1091", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
                 Button(
@@ -456,9 +694,20 @@ private fun ThreatResultCard(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "SMS", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Send, contentDescription = "SMS", modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("ALERT SMS", fontWeight = FontWeight.Bold)
+                    Text("SMS", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+
+                Button(
+                    onClick = onSoundSiren,
+                    colors = ButtonDefaults.buttonColors(containerColor = MagentaSecondary),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = "Siren", modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("SIREN", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "TN Kavalan Women Safety"
+rootProject.name = "Sentinel AI"
 
 include(":app")

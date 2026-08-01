@@ -202,19 +202,6 @@ fun MainContainer(
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Warning, contentDescription = strings.tabSos) },
-                    label = { Text(strings.tabSos, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = CrimsonPrimary,
-                        selectedTextColor = CrimsonPrimary,
-                        indicatorColor = CrimsonPrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_sos")
-                )
-
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
                     icon = { Icon(Icons.Default.AutoAwesome, contentDescription = strings.tabAi) },
                     label = { Text(strings.tabAi, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
@@ -223,6 +210,19 @@ fun MainContainer(
                         indicatorColor = MagentaSecondary.copy(alpha = 0.15f)
                     ),
                     modifier = Modifier.testTag("nav_tab_ai")
+                )
+
+                NavigationBarItem(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = { Icon(Icons.Default.Warning, contentDescription = strings.tabSos) },
+                    label = { Text(strings.tabSos, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = CrimsonPrimary,
+                        selectedTextColor = CrimsonPrimary,
+                        indicatorColor = CrimsonPrimary.copy(alpha = 0.15f)
+                    ),
+                    modifier = Modifier.testTag("nav_tab_sos")
                 )
 
                 NavigationBarItem(
@@ -264,16 +264,6 @@ fun MainContainer(
                     modifier = Modifier.testTag("nav_tab_guide")
                 )
             }
-        },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = CrimsonPrimary,
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
         }
     ) { innerPadding ->
         Box(
@@ -282,19 +272,19 @@ fun MainContainer(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> SosHomeScreen(
+                0 -> AiAssistantScreen(
+                    viewModel = viewModel,
+                    threatPrompt = threatPrompt,
+                    isEvaluatingThreat = isEvaluatingThreat,
+                    threatResult = threatResult
+                )
+                1 -> SosHomeScreen(
                     viewModel = viewModel,
                     isSirenActive = isSirenActive,
                     isRecordingAudio = isRecordingAudio,
                     recordingTimerSeconds = recordingTimerSeconds,
                     audioRecordings = audioRecordings,
                     playingAudioPath = playingAudioPath
-                )
-                1 -> AiAssistantScreen(
-                    viewModel = viewModel,
-                    threatPrompt = threatPrompt,
-                    isEvaluatingThreat = isEvaluatingThreat,
-                    threatResult = threatResult
                 )
                 2 -> PoliceStationsScreen(
                     viewModel = viewModel,

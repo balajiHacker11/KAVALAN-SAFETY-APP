@@ -90,6 +90,25 @@ object AppStrings {
         val deescalationTitle: String
         val call1091Btn: String
         val alertSmsBtn: String
+        val voiceInputBtn: String
+        val voiceInputListening: String
+        val autoVoiceGuardianBtn: String
+        val speakResponseBtn: String
+        val muteResponseBtn: String
+        val parameterizedKeywordsTitle: String
+
+        // Permissions & Scream Detector
+        val screamDetectorTitle: String
+        val screamDetectorSubtitle: String
+        val screamListeningActive: String
+        val screamListeningOff: String
+        val screamDialogTitle: String
+        val screamDialogMessage: String
+        val captureIncidentPhotoAction: String
+        val shareEvidenceGuardians: String
+        val grantPermissionsBtn: String
+        val permissionsHeader: String
+        val permissionsDesc: String
 
         // Guide Screen
         val guideHeaderTitle: String
@@ -103,7 +122,7 @@ object AppStrings {
     }
 
     private object EnglishStrings : Strings {
-        override val appTitle = "TN Kavalan SOS"
+        override val appTitle = "Sentinel AI"
         override val topAppBarCall = "Call Police 1091"
         override val selectLanguage = "Language / மொழி"
         override val languageDialogTitle = "Select App Language / மொழியைத் தேர்ந்தெடுக்கவும்"
@@ -166,18 +185,36 @@ object AppStrings {
         override val callStationBtn = "Call Station"
         override val directionsBtn = "Directions"
 
-        override val aiHeaderTitle = "AI Attack Threat & Escape Route Finder"
-        override val aiHeaderSubtitle = "Describe your situation for real-time risk level analysis & tactical escape route steps"
+        override val aiHeaderTitle = "Sentinel AI Voice Escape & Threat Analyzer"
+        override val aiHeaderSubtitle = "Communicate via voice or text. Parameterized keywords analyze real-time threats and provide instant tactical escape routes."
         override val quickScenariosTitle = "Quick Threat Scenarios"
-        override val aiInputPlaceholder = "e.g. Walking home in Madurai and two strangers on a scooter are trailing me..."
-        override val analyzeBtnText = "ANALYZE RISK & GET ESCAPE ROUTE"
-        override val evaluatingText = "Evaluating Attack Threat Level..."
-        override val dangerScorePrefix = "Danger Score: "
-        override val threatAnalysisTitle = "Threat Analysis"
-        override val tacticalEscapeTitle = "Immediate Tactical Escape Route Steps"
+        override val aiInputPlaceholder = "Speak or type e.g. Someone is following me near Chennai central station..."
+        override val analyzeBtnText = "ANALYZE THREAT & ESCAPE"
+        override val evaluatingText = "Evaluating Threat & Calculating Escape Route..."
+        override val dangerScorePrefix = "Threat Level Score: "
+        override val threatAnalysisTitle = "Situational Threat Assessment"
+        override val tacticalEscapeTitle = "Immediate Tactical Escape Steps"
         override val deescalationTitle = "De-escalation & Defense Advice"
         override val call1091Btn = "CALL 1091"
         override val alertSmsBtn = "ALERT SMS"
+        override val voiceInputBtn = "Voice Assistant"
+        override val voiceInputListening = "Listening to your voice..."
+        override val autoVoiceGuardianBtn = "Auto Voice Record to Guardians"
+        override val speakResponseBtn = "Speak Guidance"
+        override val muteResponseBtn = "Mute Voice"
+        override val parameterizedKeywordsTitle = "Parameterized Threat Detector"
+
+        override val screamDetectorTitle = "24/7 Scream & Loud Voice SOS Trigger"
+        override val screamDetectorSubtitle = "Detects loud screams or 'HELP' / 'காப்பாத்துங்க' to auto-trigger haptic alarm, incident photo, and prompt 1091 call"
+        override val screamListeningActive = "Listening for Scream / HELP / உதவி..."
+        override val screamListeningOff = "Tap to Enable Scream SOS Detection"
+        override val screamDialogTitle = "🚨 SCREAM / DISTRESS DETECTED!"
+        override val screamDialogMessage = "Loud scream or emergency help voice detected! Strong haptic alert triggered and incident photo captured. Call 1091 now?"
+        override val captureIncidentPhotoAction = "Capture Incident\nPhoto"
+        override val shareEvidenceGuardians = "Share Evidence to Guardians"
+        override val grantPermissionsBtn = "Grant Camera & Mic Permissions"
+        override val permissionsHeader = "Camera & Mic Permissions Required"
+        override val permissionsDesc = "Grant permissions to capture incident camera evidence, record audio, and send emergency SMS to guardians."
 
         override val guideHeaderTitle = "Women Tactical Safety Guide"
         override val guideHeaderSubtitle = "Essential moves, transit rules, and legal protections"
@@ -190,7 +227,7 @@ object AppStrings {
     }
 
     private object TamilStrings : Strings {
-        override val appTitle = "TN காவலன் SOS"
+        override val appTitle = "சென்டினல் AI"
         override val topAppBarCall = "மகளிர் காவல் 1091"
         override val selectLanguage = "மொழி / Language"
         override val languageDialogTitle = "பயன்பாட்டு மொழியைத் தேர்ந்தெடுக்கவும்"
@@ -253,10 +290,10 @@ object AppStrings {
         override val callStationBtn = "நிலையத்திற்கு அழை"
         override val directionsBtn = "வழித்தடம்"
 
-        override val aiHeaderTitle = "AI அச்சுறுத்தல் பகுப்பாய்வு & தப்பிக்கும் வழி"
-        override val aiHeaderSubtitle = "நேரலை ஆபத்து பகுப்பாய்வு மற்றும் தப்பிக்கும் வழிகளுக்கு உங்கள் சூழ்நிலையை விவரிக்கவும்"
+        override val aiHeaderTitle = "சென்டினல் AI குரல் உதவி & தப்பிக்கும் வழி"
+        override val aiHeaderSubtitle = "குரல் அல்லது தட்டச்சு மூலம் தொடர்பு கொள்ளுங்கள். சிறப்பு அச்சுறுத்தல் சொற்கள் மூலம் ஆபத்து உடனடியாக பகுப்பாய்வு செய்யப்பட்டு தப்பிக்கும் வழி சொல்லப்படும்."
         override val quickScenariosTitle = "விரைவு அச்சுறுத்தல் சூழ்நிலைகள்"
-        override val aiInputPlaceholder = "எ.கா. மதுரையில் தனியாக நடந்து செல்லும்போது இருவர் பின்தொடர்கிறார்கள்..."
+        override val aiInputPlaceholder = "பேசவும் அல்லது தட்டச்சு செய்யவும்: எ.கா. சென்னை சென்ட்ரல் அருகே ஒருவன் பின்தொடர்கிறான்..."
         override val analyzeBtnText = "ஆபத்தை ஆராய்ந்து தப்பிக்கும் வழியைப் பெறுக"
         override val evaluatingText = "ஆபத்து நிலை ஆராயப்படுகிறது..."
         override val dangerScorePrefix = "ஆபத்து அளவு: "
@@ -265,6 +302,24 @@ object AppStrings {
         override val deescalationTitle = "தற்காப்பு மற்றும் தப்பிக்கும் ஆலோசனைகள்"
         override val call1091Btn = "1091 ஐ அழை"
         override val alertSmsBtn = "SMS அனுப்பு"
+        override val voiceInputBtn = "குரல் உதவி"
+        override val voiceInputListening = "உங்கள் குரலைக் கவனிக்கிறது..."
+        override val autoVoiceGuardianBtn = "குரல் பதிவு செய்து பாதுகாவலருக்கு அனுப்பு"
+        override val speakResponseBtn = "வழிகாட்டலை பேசு"
+        override val muteResponseBtn = "குரலை நிறுத்து"
+        override val parameterizedKeywordsTitle = "சிறப்பு அச்சுறுத்தல் கணிப்பான்"
+
+        override val screamDetectorTitle = "24/7 அலறல் மற்றும் அவசரக் குரல் SOS தூண்டி"
+        override val screamDetectorSubtitle = "உரத்த அலறல் அல்லது 'HELP' / 'காப்பாத்துங்க' குரல் ஒலித்தால் அதிர்வு எச்சரிக்கை, கேமரா படம் மற்றும் 1091 அழைப்பு தானாகத் தோன்றும்"
+        override val screamListeningActive = "அலறல் / HELP / உதவி குரல் கவனிக்கப்படுகிறது..."
+        override val screamListeningOff = "அலறல் SOS கணிப்பை இயக்க அழுத்தவும்"
+        override val screamDialogTitle = "🚨 உரத்த அலறல் / அவசர உதவி கண்டறியப்பட்டது!"
+        override val screamDialogMessage = "உரத்த அலறல் அல்லது அவசர உதவி குரல் கண்டறியப்பட்டது! அதிர்வு எச்சரிக்கை தூண்டப்பட்டு கேமரா படம் எடுக்கப்பட்டது. 1091 ஐ அழைக்கவா?"
+        override val captureIncidentPhotoAction = "சம்பவ படம்\nஎடு"
+        override val shareEvidenceGuardians = "ஆதாரங்களை பாதுகாவலர்களுக்கு அனுப்பு"
+        override val grantPermissionsBtn = "கேமரா & மைக் அனுமதிகளை வழங்கு"
+        override val permissionsHeader = "கேமரா மற்றும் மைக் அனுமதிகள் தேவை"
+        override val permissionsDesc = "சம்பவ படங்கள் எடுக்கவும், குரல் பதிவு செய்யவும், பாதுகாவலர்களுக்கு அவசர SMS அனுப்பவும் அனுமதிகளை வழங்கவும்."
 
         override val guideHeaderTitle = "பெண்கள் பாதுகாப்பு மற்றும் உரிமை வழிகாட்டி"
         override val guideHeaderSubtitle = "முக்கிய தற்காப்பு முறைகள், பயண விதிகள் மற்றும் சட்ட உரிமைகள்"
