@@ -25,14 +25,17 @@ class TextToSpeechManager(context: Context) : TextToSpeech.OnInitListener {
     fun speak(text: String, language: AppLanguage) {
         if (!isInitialized || tts == null) return
 
-        val locale = if (language == AppLanguage.TAMIL) {
-            Locale("ta", "IN")
-        } else {
-            Locale.US
+        val containsTamilScript = text.any { it.code in 0x0B80..0x0BFF }
+        val isTamilMode = language == AppLanguage.TAMIL || containsTamilScript
+
+        val primaryLocale = if (isTamilMode) Locale("ta", "IN") else Locale.US
+        var langResult = tts?.setLanguage(primaryLocale)
+
+        if (isTamilMode && (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED)) {
+            langResult = tts?.setLanguage(Locale("ta"))
         }
 
-        val result = tts?.setLanguage(locale)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+        if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
             tts?.setLanguage(Locale.US)
         }
 

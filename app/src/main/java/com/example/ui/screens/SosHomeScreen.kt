@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.Mic
@@ -59,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -106,7 +106,6 @@ fun SosHomeScreen(
     val currentAmplitude by viewModel.screamDetector.currentAmplitude.collectAsStateWithLifecycle()
 
     val requiredPermissions = arrayOf(
-        Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.CALL_PHONE,
         Manifest.permission.SEND_SMS
@@ -123,16 +122,6 @@ fun SosHomeScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
         viewModel.triggerFullMasterSosAlert()
-    }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            viewModel.captureIncidentPhoto()
-        } else {
-            viewModel.showNotice("Camera permission is required to capture incident photo evidence")
-        }
     }
 
     // Scream Emergency Trigger Dialog
@@ -235,23 +224,39 @@ fun SosHomeScreen(
         item {
             Card(
                 shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.5.dp,
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(CrimsonPrimary, Color(0xFF9C27B0))
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Image(
-                        painter = painterResource(id = R.drawable.img_hero_sos),
-                        contentDescription = "TN Safety Banner",
+                        painter = painterResource(id = R.drawable.img_opening_women_safety_1785573238673),
+                        contentDescription = "Women Safety Guard Banner",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(130.dp),
+                            .height(160.dp),
                         contentScale = ContentScale.Crop
                     )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(130.dp)
-                            .background(Color.Black.copy(alpha = 0.50f))
+                            .height(160.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.20f),
+                                        Color.Black.copy(alpha = 0.85f)
+                                    )
+                                )
+                            )
                     )
                     Column(
                         modifier = Modifier
@@ -260,18 +265,18 @@ fun SosHomeScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
-                                color = SuccessGreen,
+                                color = CrimsonPrimary,
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
                                         modifier = Modifier
                                             .size(8.dp)
                                             .clip(CircleShape)
-                                            .background(Color.White)
+                                            .background(SuccessGreen)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
@@ -287,13 +292,13 @@ fun SosHomeScreen(
                         Text(
                             text = strings.sosBannerTitle,
                             color = Color.White,
-                            fontSize = 18.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
                             text = strings.sosBannerSubtitle,
-                            color = Color.White.copy(alpha = 0.85f),
-                            fontSize = 12.sp
+                            color = Color.White.copy(alpha = 0.90f),
+                            fontSize = 11.sp
                         )
                     }
                 }
@@ -513,17 +518,13 @@ fun SosHomeScreen(
                 )
 
                 QuickActionCard(
-                    title = strings.captureIncidentPhotoAction,
-                    icon = Icons.Default.CameraAlt,
+                    title = if (currentLanguage == AppLanguage.TAMIL) "மகளிர் காவல்\nநிலையங்கள்" else "AWPS Women\nPolice Directory",
+                    icon = Icons.Default.Shield,
                     containerColor = Color(0xFF673AB7),
                     modifier = Modifier.weight(1f),
-                    testTag = "action_capture_photo",
+                    testTag = "action_awps_directory",
                     onClick = {
-                        if (isPermissionGranted(Manifest.permission.CAMERA)) {
-                            viewModel.captureIncidentPhoto()
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
+                        viewModel.showNotice("Open 'AWPS Police' tab below for full directory across Tamil Nadu")
                     }
                 )
             }
@@ -630,24 +631,7 @@ fun SosHomeScreen(
             }
         }
 
-        // Saved Photo Evidence List
-        if (incidentEvidences.isNotEmpty()) {
-            item {
-                Text(
-                    text = "Captured Camera Evidence (${incidentEvidences.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
 
-            items(incidentEvidences) { evidence ->
-                IncidentEvidenceCard(
-                    evidence = evidence,
-                    onShare = { viewModel.shareEvidenceToGuardians(context, evidence.filePath) },
-                    onDelete = { viewModel.deleteEvidence(evidence) }
-                )
-            }
-        }
 
         // Saved Evidence Audio List
         if (audioRecordings.isNotEmpty()) {
@@ -828,77 +812,7 @@ private fun AudioRecordingCard(
     }
 }
 
-@Composable
-private fun IncidentEvidenceCard(
-    evidence: IncidentEvidenceEntity,
-    onShare: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val dateStr = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(evidence.timestamp))
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF673AB7)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Photo Evidence",
-                        tint = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = evidence.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = "$dateStr • Incident Evidence",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Row {
-                IconButton(onClick = onShare) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share Photo Evidence",
-                        tint = SuccessGreen
-                    )
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Evidence",
-                        tint = CrimsonPrimary
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun HelplineBarItem(

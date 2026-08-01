@@ -396,7 +396,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         _parameterizedResult.value = paramResult
 
         viewModelScope.launch {
-            val geminiResult = geminiAssistant.evaluateAttackThreat(prompt)
+            val geminiResult = geminiAssistant.evaluateAttackThreat(prompt, isTamil = isTa)
             _threatResult.value = geminiResult
             _isEvaluatingThreat.value = false
 

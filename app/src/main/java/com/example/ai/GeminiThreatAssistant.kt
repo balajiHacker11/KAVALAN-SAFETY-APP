@@ -32,20 +32,31 @@ class GeminiThreatAssistant {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    suspend fun evaluateAttackThreat(userSituation: String): ThreatAnalysisResult = withContext(Dispatchers.IO) {
+    suspend fun evaluateAttackThreat(userSituation: String, isTamil: Boolean = false): ThreatAnalysisResult = withContext(Dispatchers.IO) {
         val apiKey = try {
             BuildConfig.GEMINI_API_KEY
         } catch (e: Exception) {
             ""
         }
 
+        val containsTamilScript = userSituation.any { it.code in 0x0B80..0x0BFF }
+        val useTamilResponse = isTamil || containsTamilScript
+
         if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext getOfflineTacticalFallback(userSituation)
+            return@withContext getOfflineTacticalFallback(userSituation, useTamilResponse)
+        }
+
+        val languageInstruction = if (useTamilResponse) {
+            "CRITICAL: The user language is TAMIL. You MUST generate SUMMARY, ESCAPE_STEPS, and TACTICAL_ADVICE entirely in clear Tamil language (தமிழ் script) so that Tamil TTS voice engine speaks it natively!"
+        } else {
+            "Language: English"
         }
 
         val systemPrompt = """
             You are Sentinel AI Emergency Threat Evaluator and Tactical Escape Assistant for Women Safety.
             Your task: Analyze the user's situation prompt and determine threat level, tactical escape route, and action steps.
+            
+            $languageInstruction
             
             OUTPUT RULES:
             Begin response with one line specifying the threat level strictly in this format:
@@ -114,9 +125,9 @@ class GeminiThreatAssistant {
                     }
                 }
             }
-            getOfflineTacticalFallback(userSituation)
+            getOfflineTacticalFallback(userSituation, useTamilResponse)
         } catch (e: Exception) {
-            getOfflineTacticalFallback(userSituation)
+            getOfflineTacticalFallback(userSituation, useTamilResponse)
         }
     }
 
@@ -188,8 +199,65 @@ class GeminiThreatAssistant {
         )
     }
 
-    private fun getOfflineTacticalFallback(prompt: String): ThreatAnalysisResult {
+    private fun getOfflineTacticalFallback(prompt: String, isTamil: Boolean = false): ThreatAnalysisResult {
         val lower = prompt.lowercase()
+        val containsTamil = isTamil || prompt.any { it.code in 0x0B80..0x0BFF }
+
+        if (containsTamil) {
+            return when {
+                lower.contains("பின்தொடர்") || lower.contains("பின்னாடி") || lower.contains("கத்தி") || lower.contains("துப்பாக்கி") || lower.contains("பிடி") || lower.contains("மிரட்") || lower.contains("follow") || lower.contains("chase") -> {
+                    ThreatAnalysisResult(
+                        threatLevel = ThreatLevel.CRITICAL,
+                        scorePercentage = 95,
+                        summary = "ஆபத்தான நிலை: ஒருவன் உங்களை பின்தொடர்கிறான் அல்லது நேரடியாக அச்சுறுத்துகிறான்.",
+                        immediateEscapeSteps = listOf(
+                            "பயப்பட வேண்டாம்: உடனடியாக அருகில் உள்ள கடை, தேநீரகம் அல்லது ஆட்கள் நடமாட்டம் உள்ள பகுதிக்கு செல்லவும்.",
+                            "1091 தமிழ்நாடு மகளிர் காவல்துறையை நேரடியாக அழைக்க பெரிய சிவப்பு SOS பொத்தானை அழுத்தவும்.",
+                            "பொதுமக்களின் கவனத்தை ஈர்க்க உரத்த சைரன் எச்சரிக்கையை இயக்கவும்.",
+                            "அவசர நிலைக் காலத்தில் 'காப்பாற்றுங்கள்!' அல்லது 'தீ!' என்று உரக்கக் கத்தவும்."
+                        ),
+                        tacticalDeescalationAdvice = listOf(
+                            "பாதுகாவலர்களுக்கு அவசர SMS மூலம் உடனடி தகவல் அனுப்பவும்.",
+                            "அருகில் உள்ள அனைத்து மகளிர் காவல் நிலையத்திற்குச் செல்லவும்."
+                        )
+                    )
+                }
+                lower.contains("ஆட்டோ") || lower.contains("டாக்ஸி") || lower.contains("வண்டி") || lower.contains("பாதை") || lower.contains("இரவு") || lower.contains("cab") || lower.contains("auto") -> {
+                    ThreatAnalysisResult(
+                        threatLevel = ThreatLevel.HIGH,
+                        scorePercentage = 75,
+                        summary = "அதிக ஆபத்து: ஆட்டோ / டாக்ஸி தவறான பாதையில் செல்கிறது அல்லது ஆபத்தான சூழல் உள்ளது.",
+                        immediateEscapeSteps = listOf(
+                            "ஓட்டுநரிடம் தைரியமாக சொல்லுங்கள்: 'என் குடும்பத்தினரும் காவல்துறையும் இந்த பயணத்தை நேரலையாகக் கண்காணிக்கிறார்கள்'.",
+                            "வண்டி ஆள்நடமாட்டமில்லாத இடத்தில் நின்றால், உடனே கதவைத் திறந்து வெளிச்சமான இடத்தை நோக்கி செல்லவும்.",
+                            "பாதுகாவலர்களுக்கு உடனடி SMS எச்சரிக்கை அனுப்பவும்.",
+                            "ஆதாரத்திற்காக ஒலிப்பதிவை (Audio Record) இயக்கவும்."
+                        ),
+                        tacticalDeescalationAdvice = listOf(
+                            "குடும்பத்தினரிடம் பேசுவது போல் போலி அழைப்பு செய்து வாகனத்தின் எண்ணை உரக்கச் சொல்லவும்.",
+                            "கதவுக் பிடியை தயாராகப் பிடித்துக் கொள்ளவும்."
+                        )
+                    )
+                }
+                else -> {
+                    ThreatAnalysisResult(
+                        threatLevel = ThreatLevel.MEDIUM,
+                        scorePercentage = 50,
+                        summary = "மிதமான ஆபத்து: எச்சரிக்கையுடன் இருக்க அறிவுறுத்தப்படுகிறது.",
+                        immediateEscapeSteps = listOf(
+                            "அருகில் உள்ள மகளிர் காவல் நிலையம் (AWPS) அல்லது காவல் சாவடியைக் கண்டறியவும்.",
+                            "சென்டினல் AI பயன்பாட்டை திறந்த நிலையில் வைத்திருக்கவும்.",
+                            "எதிரே வரும் வாகனங்களை நோக்கியவாறு சுறுசுறுப்பாக நடக்கவும்."
+                        ),
+                        tacticalDeescalationAdvice = listOf(
+                            "தனியாக நடக்கும் போது இயர்போன் அணிவதையோ போனை மட்டும் பார்த்து நடப்பதையோ தவிர்க்கவும்.",
+                            "முதன்மை பாதுகாவலரின் எண்ணை விரைவு அழைப்பில் வைக்கவும்."
+                        )
+                    )
+                }
+            }
+        }
+
         return when {
             lower.contains("follow") || lower.contains("chase") || lower.contains("gun") || lower.contains("knife") || lower.contains("grab") || lower.contains("corner") -> {
                 ThreatAnalysisResult(

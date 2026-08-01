@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Security
@@ -57,7 +56,6 @@ fun PermissionStatusCard(
 
     val requiredPermissions = remember {
         arrayOf(
-            Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CALL_PHONE,
             Manifest.permission.SEND_SMS
@@ -123,8 +121,6 @@ fun PermissionStatusCard(
                     colors = ButtonDefaults.buttonColors(containerColor = CrimsonPrimary),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Camera", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
                     Icon(Icons.Default.Mic, contentDescription = "Mic", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
