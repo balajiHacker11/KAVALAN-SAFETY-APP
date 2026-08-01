@@ -60,8 +60,7 @@ fun PermissionStatusCard(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CALL_PHONE,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.SEND_SMS
         )
     }
 

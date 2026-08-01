@@ -109,8 +109,7 @@ fun SosHomeScreen(
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.CALL_PHONE,
-        Manifest.permission.SEND_SMS,
-        Manifest.permission.ACCESS_FINE_LOCATION
+        Manifest.permission.SEND_SMS
     )
 
     fun isPermissionGranted(permission: String): Boolean {
@@ -124,6 +123,16 @@ fun SosHomeScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
         viewModel.triggerFullMasterSosAlert()
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.captureIncidentPhoto()
+        } else {
+            viewModel.showNotice("Camera permission is required to capture incident photo evidence")
+        }
     }
 
     // Scream Emergency Trigger Dialog
@@ -513,10 +522,51 @@ fun SosHomeScreen(
                         if (isPermissionGranted(Manifest.permission.CAMERA)) {
                             viewModel.captureIncidentPhoto()
                         } else {
-                            permissionLauncher.launch(requiredPermissions)
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }
                     }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Dedicated Offline SMS Evidence Dispatcher Button
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SuccessGreen),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (isPermissionGranted(Manifest.permission.SEND_SMS)) {
+                            viewModel.sendOfflineSmsWithEvidence()
+                        } else {
+                            permissionLauncher.launch(requiredPermissions)
+                        }
+                    }
+                    .testTag("action_send_offline_sms_evidence")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Send,
+                        contentDescription = "Offline SMS Evidence",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = strings.sendOfflineSmsEvidenceAction,
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
         }
 
@@ -823,7 +873,7 @@ private fun IncidentEvidenceCard(
                         fontSize = 14.sp
                     )
                     Text(
-                        text = "$dateStr • ${evidence.locationInfo}",
+                        text = "$dateStr • Incident Evidence",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

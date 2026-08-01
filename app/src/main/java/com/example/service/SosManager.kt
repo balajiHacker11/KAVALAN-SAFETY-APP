@@ -36,17 +36,27 @@ class SosManager(private val context: Context) {
 
     fun sendEmergencySmsToGuardians(
         guardians: List<GuardianEntity>,
-        locationText: String = "Chennai, Tamil Nadu (Lat: 13.0827, Long: 80.2707)",
+        locationText: String = "Live Emergency Location",
         customMessage: String? = null
+    ): String {
+        return sendOfflineEvidenceSmsToGuardians(guardians, null, null)
+    }
+
+    fun sendOfflineEvidenceSmsToGuardians(
+        guardians: List<GuardianEntity>,
+        latestPhotoName: String? = null,
+        latestAudioName: String? = null
     ): String {
         if (guardians.isEmpty()) {
             return "No guardians registered. Please add emergency contacts first!"
         }
 
         vibrateAlert()
-        val defaultMsg = customMessage ?: "I am in danger please help me"
-        var successCount = 0
+        val photoPart = if (!latestPhotoName.isNullOrEmpty()) "\n📷 Incident Photo: $latestPhotoName" else ""
+        val audioPart = if (!latestAudioName.isNullOrEmpty()) "\n🎙️ Audio Evidence: $latestAudioName" else ""
+        val fullMsg = "🚨 EMERGENCY ALERT!\nI am in danger! Urgent help needed immediately.$photoPart$audioPart\n- Sent via Sentinel AI Guard"
 
+        var successCount = 0
         val smsManager: SmsManager = try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 context.getSystemService(SmsManager::class.java)
@@ -63,7 +73,7 @@ class SosManager(private val context: Context) {
             val phone = guardian.phone.trim()
             if (phone.isNotEmpty()) {
                 try {
-                    val parts = smsManager.divideMessage(defaultMsg)
+                    val parts = smsManager.divideMessage(fullMsg)
                     smsManager.sendMultipartTextMessage(phone, null, parts, null, null)
                     successCount++
                 } catch (e: Exception) {
@@ -72,10 +82,22 @@ class SosManager(private val context: Context) {
             }
         }
 
+        try {
+            val primaryPhone = guardians.firstOrNull { it.isPrimary }?.phone ?: guardians.first().phone
+            val uri = android.net.Uri.parse("smsto:${primaryPhone.trim()}")
+            val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
+                putExtra("sms_body", fullMsg)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (ex: Exception) {
+            Log.e("SosManager", "Failed to launch system SMS intent: ${ex.message}")
+        }
+
         return if (successCount > 0) {
-            "Emergency SMS alert sent to $successCount guardian(s)!"
+            "Offline SMS evidence alert sent to $successCount guardian(s)!"
         } else {
-            "Triggered Emergency Alert: 'I am in danger please help me'."
+            "Offline SMS ready with Photo/Audio evidence & location."
         }
     }
 

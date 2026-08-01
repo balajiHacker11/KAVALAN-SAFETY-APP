@@ -96,6 +96,13 @@ object AppStrings {
         val speakResponseBtn: String
         val muteResponseBtn: String
         val parameterizedKeywordsTitle: String
+        val sendOfflineSmsEvidenceAction: String
+        val tamilVoiceBadgeText: String
+        val scenarioStalking: String
+        val scenarioCab: String
+        val scenarioNight: String
+        val scenarioWorkplace: String
+        val scenarioCyber: String
 
         // Permissions & Scream Detector
         val screamDetectorTitle: String
@@ -161,12 +168,12 @@ object AppStrings {
         override val helplineNcwDesc = "24/7 NCW Helpline for Women in Distress"
 
         override val guardiansHeaderTitle = "Emergency Guardian Network"
-        override val guardiansHeaderSubtitle = "Registered guardians will receive immediate SMS alerts with your live location during SOS."
+        override val guardiansHeaderSubtitle = "Registered guardians will receive immediate SMS emergency alerts and evidence during SOS."
         override val testSmsBtn = "TEST EMERGENCY ALERT SMS NOW"
         override val savedGuardiansTitle = "Saved Guardians"
         override val addNewBtn = "Add New"
         override val noGuardiansTitle = "No Guardians Added Yet"
-        override val noGuardiansSubtitle = "Add family members or trusted friends so they receive automatic location SMS during emergency."
+        override val noGuardiansSubtitle = "Add family members or trusted friends so they receive automatic evidence SMS during emergency."
         override val addFirstGuardianBtn = "+ Add First Guardian"
         override val addGuardianDialogTitle = "Add Emergency Guardian"
         override val guardianNameLabel = "Guardian Name"
@@ -203,6 +210,13 @@ object AppStrings {
         override val speakResponseBtn = "Speak Guidance"
         override val muteResponseBtn = "Mute Voice"
         override val parameterizedKeywordsTitle = "Parameterized Threat Detector"
+        override val sendOfflineSmsEvidenceAction = "Offline SMS Evidence\nஆஃப்லைன் SMS அனுப்பவும்"
+        override val tamilVoiceBadgeText = "தமிழ்ப் பேச்சைக் கவனிக்கிறது"
+        override val scenarioStalking = "ஒருவன் என்னை பின்தொடர்கிறான் (Someone is following me)"
+        override val scenarioCab = "ஆட்டோ/டாக்ஸி வழி மாறுகிறது (Cab/Auto wrong route)"
+        override val scenarioNight = "இருட்டான சாலையில் பயமாக உள்ளது (Isolated dark street)"
+        override val scenarioWorkplace = "அலுவலகத்தில் மிரட்டல் (Workplace harassment)"
+        override val scenarioCyber = "ஆன்லைன் பிளாக்மெயில் / அச்சுறுத்தல் (Cyber threat)"
 
         override val screamDetectorTitle = "24/7 Scream & Loud Voice SOS Trigger"
         override val screamDetectorSubtitle = "Detects loud screams or 'HELP' / 'காப்பாத்துங்க' to auto-trigger haptic alarm, incident photo, and prompt 1091 call"
@@ -266,7 +280,7 @@ object AppStrings {
         override val helplineNcwDesc = "24/7 பெண்கள் பாதுகாப்பு தேசிய ஆணையத்தின் உதவி எண்"
 
         override val guardiansHeaderTitle = "அவசரகால பாதுகாவலர் பிணையம்"
-        override val guardiansHeaderSubtitle = "SOS இன் போது பதிவுசெய்த பாதுகாவலர்கள் உங்கள் நேரடி இருப்பிடத்துடன் SMS எச்சரிக்கைகளைப் பெறுவார்கள்."
+        override val guardiansHeaderSubtitle = "SOS இன் போது பதிவுசெய்த பாதுகாவலர்கள் அவசரநிலை SMS மற்றும் ஆதாரங்களை உடனடியாக பெறுவார்கள்."
         override val testSmsBtn = "அவசர எச்சரிக்கை SMS ஐ சோதனை செய்"
         override val savedGuardiansTitle = "சேமிக்கப்பட்ட பாதுகாவலர்கள்"
         override val addNewBtn = "+ புதிய பாதுகாவலர்"
@@ -308,6 +322,13 @@ object AppStrings {
         override val speakResponseBtn = "வழிகாட்டலை பேசு"
         override val muteResponseBtn = "குரலை நிறுத்து"
         override val parameterizedKeywordsTitle = "சிறப்பு அச்சுறுத்தல் கணிப்பான்"
+        override val sendOfflineSmsEvidenceAction = "ஆஃப்லைன் SMS ஆதாரங்கள்\nபாதுகாவலர்களுக்கு அனுப்பு"
+        override val tamilVoiceBadgeText = "தமிழ் குரல் வழிகாட்டி இயங்குகிறது"
+        override val scenarioStalking = "ஒருவன் என்னை பின்தொடர்கிறான்"
+        override val scenarioCab = "ஆட்டோ/டாக்ஸி தவறான பாதை செல்கிறது"
+        override val scenarioNight = "இருட்டான தெருவில் தனியாக பயமாக உள்ளது"
+        override val scenarioWorkplace = "அலுவலகத்தில் மிரட்டல் / துன்புறுத்தல்"
+        override val scenarioCyber = "ஆன்லைன் பிளாக்மெயில் மற்றும் போலி கணக்கு"
 
         override val screamDetectorTitle = "24/7 அலறல் மற்றும் அவசரக் குரல் SOS தூண்டி"
         override val screamDetectorSubtitle = "உரத்த அலறல் அல்லது 'HELP' / 'காப்பாத்துங்க' குரல் ஒலித்தால் அதிர்வு எச்சரிக்கை, கேமரா படம் மற்றும் 1091 அழைப்பு தானாகத் தோன்றும்"

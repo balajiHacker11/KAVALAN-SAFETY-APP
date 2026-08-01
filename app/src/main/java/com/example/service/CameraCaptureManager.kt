@@ -14,7 +14,7 @@ import java.util.Locale
 
 class CameraCaptureManager(private val context: Context) {
 
-    fun captureIncidentPhoto(locationInfo: String = "TN Location Recorded"): File? {
+    fun captureIncidentPhoto(infoTag: String = "Incident Snapshot Recorded"): File? {
         val timestamp = System.currentTimeMillis()
         val timeStr = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
         val fileName = "incident_photo_$timestamp.jpg"
@@ -22,7 +22,7 @@ class CameraCaptureManager(private val context: Context) {
         val outputFile = File(storageDir, fileName)
 
         try {
-            // Generate a realistic evidence snapshot bitmap with date/time, GPS coordinates watermark
+            // Generate a realistic evidence snapshot bitmap with date/time watermark
             val width = 1080
             val height = 1440
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -45,7 +45,7 @@ class CameraCaptureManager(private val context: Context) {
                 color = Color.parseColor("#D32F2F")
                 style = Paint.Style.FILL
             }
-            canvas.drawRect(60f, 60f, 600f, 150f, badgePaint)
+            canvas.drawRect(60f, 60f, 620f, 150f, badgePaint)
 
             val textPaint = Paint().apply {
                 color = Color.WHITE
@@ -53,9 +53,9 @@ class CameraCaptureManager(private val context: Context) {
                 isFakeBoldText = true
                 isAntiAlias = true
             }
-            canvas.drawText("🚨 TN KAVALAN INCIDENT EVIDENCE", 80f, 120f, textPaint)
+            canvas.drawText("🚨 SENTINEL AI INCIDENT EVIDENCE", 80f, 120f, textPaint)
 
-            // Watermark timestamp & Location details at bottom
+            // Watermark timestamp & Evidence details at bottom
             val infoBgPaint = Paint().apply {
                 color = Color.argb(200, 0, 0, 0)
                 style = Paint.Style.FILL
@@ -69,12 +69,12 @@ class CameraCaptureManager(private val context: Context) {
             }
             canvas.drawText("TIMESTAMP: $timeStr", 80f, height - 160f, infoTextPaint)
 
-            val locTextPaint = Paint().apply {
+            val tagTextPaint = Paint().apply {
                 color = Color.CYAN
                 textSize = 28f
                 isAntiAlias = true
             }
-            canvas.drawText("LOCATION: $locationInfo", 80f, height - 100f, locTextPaint)
+            canvas.drawText("STATUS: $infoTag", 80f, height - 100f, tagTextPaint)
 
             // Save bitmap to output file
             FileOutputStream(outputFile).use { out ->

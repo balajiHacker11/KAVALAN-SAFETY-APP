@@ -205,13 +205,24 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
     fun triggerEmergencyCall(phone: String = "1091") {
         sosManager.triggerDirectCall(phone)
-        showNotice("Initiating direct call to TN Women Police ($phone)")
+        showNotice("Initiating direct call to Women Helpline ($phone)")
     }
 
     fun sendSosSmsToGuardians() {
         viewModelScope.launch {
             val guardians = guardiansList.value
             val result = sosManager.sendEmergencySmsToGuardians(guardians)
+            showNotice(result)
+        }
+    }
+
+    fun sendOfflineSmsWithEvidence() {
+        viewModelScope.launch {
+            val guardians = guardiansList.value
+            val latestPhoto = incidentEvidencesList.value.firstOrNull { it.mediaType == "PHOTO" }?.title
+                ?: incidentEvidencesList.value.firstOrNull()?.title
+            val latestAudio = audioRecordingsList.value.firstOrNull()?.title
+            val result = sosManager.sendOfflineEvidenceSmsToGuardians(guardians, latestPhoto, latestAudio)
             showNotice(result)
         }
     }
@@ -414,7 +425,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
                 val guardians = guardiansList.value
                 val smsResult = sosManager.sendEmergencySmsToGuardians(
                     guardians,
-                    customMessage = "🚨 AUTOMATIC VOICE EMERGENCY ALERT DETECTED! Live Location link included."
+                    customMessage = "🚨 AUTOMATIC VOICE EMERGENCY ALERT DETECTED!"
                 )
 
                 if (recordedFile != null && recordedFile.exists()) {
@@ -445,7 +456,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         screamDetector.triggerHapticFeedback()
 
         // 2. Automatically capture instant camera photo evidence
-        val photoFile = cameraCaptureManager.captureIncidentPhoto("Distress Scream Location - TN")
+        val photoFile = cameraCaptureManager.captureIncidentPhoto("Distress Scream Detected")
         if (photoFile != null) {
             val entity = IncidentEvidenceEntity(
                 title = "Scream Triggered Incident Photo",
@@ -473,7 +484,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
     fun captureIncidentPhoto() {
         sosManager.vibrateAlert()
-        val file = cameraCaptureManager.captureIncidentPhoto("Live Incident Snapshot - TN")
+        val file = cameraCaptureManager.captureIncidentPhoto("Live Incident Snapshot")
         if (file != null && file.exists()) {
             val count = incidentEvidencesList.value.size + 1
             val entity = IncidentEvidenceEntity(
@@ -510,7 +521,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
 
             val isPhoto = filePath.endsWith(".jpg") || filePath.endsWith(".png")
             val mimeType = if (isPhoto) "image/*" else "audio/*"
-            val text = "🚨 TN KAVALAN INCIDENT EVIDENCE ALERT!\nLocation: Chennai, Tamil Nadu\nRecorded: ${file.name}"
+            val text = "🚨 SENTINEL AI INCIDENT EVIDENCE ALERT!\nRecorded: ${file.name}"
 
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = mimeType

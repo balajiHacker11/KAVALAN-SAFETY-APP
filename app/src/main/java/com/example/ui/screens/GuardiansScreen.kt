@@ -191,7 +191,7 @@ fun GuardiansScreen(
                         onCall = { viewModel.triggerEmergencyCall(guardian.phone) },
                         onDelete = { viewModel.deleteGuardian(guardian) },
                         onWhatsApp = {
-                            val msg = "Hi ${guardian.name}, I have set you as my Emergency Contact in TN Kavalan Women Safety App."
+                            val msg = "Hi ${guardian.name}, I have set you as my Emergency Contact in Sentinel AI Women Safety App."
                             viewModel.sosManager.openWhatsAppAlert(guardian.phone, msg)
                         }
                     )

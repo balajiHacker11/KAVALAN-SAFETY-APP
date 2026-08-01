@@ -21,30 +21,42 @@ object KeywordThreatAnalyzer {
 
     private val STALKING_KEYWORDS = listOf(
         "follow", "following", "chase", "chasing", "behind", "shadow", "stalk", "stalker",
-        "trailing", "corner", "staring", "துரத்துறாங்க", "பின்னால வர்றான்", "பின்தொடர்",
-        "நிழல்", "வழி மறிக்கிறான்", "தொடர்கிறார்", "பின்தொடர்கிறார்கள்"
+        "trailing", "corner", "staring", "tailgating", "watching", "துரத்துறாங்க", "பின்னால வர்றான்", "பின்தொடர்",
+        "நிழல்", "வழி மறிக்கிறான்", "தொடர்கிறார்", "பின்தொடர்கிறார்கள்", "துரத்துகிறான்", "பின்னடியே வாரான்", "ஓடி வர்றான்"
     )
 
     private val PHYSICAL_ASSAULT_KEYWORDS = listOf(
         "attack", "hit", "slap", "grab", "force", "weapon", "knife", "gun", "blood", "kill",
-        "harm", "beat", "touch", "touched", "groped", "scream", "help", "அடிக்கிறான்",
-        "தொடுறான்", "தாக்குறான்", "கத்தி", "கொலை", "பயம்", "காப்பாத்துங்க", "உதவி", "கைப்பற்றுகிறான்"
+        "harm", "beat", "touch", "touched", "groped", "scream", "help", "strangle", "choke", "அடிக்கிறான்",
+        "தொடுறான்", "தாக்குறான்", "கத்தி", "கொலை", "பயம்", "காப்பாத்துங்க", "உதவி", "கைப்பற்றுகிறான்", "துப்பாக்கி",
+        "பலவந்தம்", "அடிக்க வர்றான்", "பிடிச்சி இழுக்குறான்"
     )
 
     private val TRANSIT_CAB_KEYWORDS = listOf(
         "cab", "taxi", "uber", "ola", "auto", "driver", "wrong route", "door lock", "isolated",
-        "autorickshaw", "bus", "night travel", "ஆட்டோ", "டாக்ஸி", "டிரைவர்", "வழி மாறுறான்",
-        "கதவை பூட்டுறான்", "தனி வழி"
+        "autorickshaw", "bus", "night travel", "train", "expressway", "ஆட்டோ", "டாக்ஸி", "டிரைவர்", "வழி மாறுறான்",
+        "கதவை பூட்டுறான்", "தனி வழி", "தவறான பாதை", "பஸ்", "பேருந்து", "ரயில்"
     )
 
     private val VERBAL_HARASSMENT_KEYWORDS = listOf(
         "harass", "stare", "comments", "shout", "shouting", "drunk", "threaten", "abusing",
-        "veeshiduran", "வேணும்னே பேசுறான்", "மிரட்டுறான்", "குடிபோதை", "முறைக்கிறான்", "கேலி"
+        "catcall", "eve teasing", "veeshiduran", "வேணும்னே பேசுறான்", "மிரட்டுறான்", "குடிபோதை", "முறைக்கிறான்",
+        "கேலி", "அசிங்கமா பேசுறான்", "கிண்டல்", "கலாட்டா"
     )
 
     private val ISOLATED_NIGHT_KEYWORDS = listOf(
         "dark", "alone", "night", "no street light", "scared", "empty road", "deserted",
-        "இருட்டு", "தனியா", "இரவு", "ஆள் நடமாட்டம் இல்லை", "பயமா இருக்கு"
+        "subway", "alley", "இருட்டு", "தனியா", "இரவு", "ஆள் நடமாட்டம் இல்லை", "பயமா இருக்கு", "யாருமில்லை", "தெரு விளக்கு இல்லை"
+    )
+
+    private val DOMESTIC_WORKPLACE_KEYWORDS = listOf(
+        "office", "boss", "colleague", "workplace", "lock room", "threaten job", "posh", "husband", "in laws",
+        "domestic violence", "அலுவலகம்", "அறை பூட்டு", "வேலை மிரட்டல்", "வீட்டு வன்முறை", "கணவன் அடிக்கிறான்"
+    )
+
+    private val CYBER_ONLINE_THREAT_KEYWORDS = listOf(
+        "blackmail", "photo leak", "online threat", "video threat", "fake profile", "cyber stalking", "morphing",
+        "பிளாக்மெயில்", "புகைப்படம்", "வீடியோ மிரட்டல்", "ஆன்லைன் அச்சுறுத்தல்", "போலி கணக்கு"
     )
 
     fun analyze(prompt: String, isTamil: Boolean = false): ParameterizedAnalysisResult {
@@ -69,13 +81,25 @@ object KeywordThreatAnalyzer {
             detected.add(ThreatParameterMatch("CAB_TRANSIT_ANOMALY", transitMatches, 75))
         }
 
-        // 4. Verbal Harassment check
+        // 4. Domestic & Workplace threat check
+        val domesticMatches = DOMESTIC_WORKPLACE_KEYWORDS.filter { clean.contains(it) }
+        if (domesticMatches.isNotEmpty()) {
+            detected.add(ThreatParameterMatch("WORKPLACE_DOMESTIC_THREAT", domesticMatches, 70))
+        }
+
+        // 5. Cyber threat check
+        val cyberMatches = CYBER_ONLINE_THREAT_KEYWORDS.filter { clean.contains(it) }
+        if (cyberMatches.isNotEmpty()) {
+            detected.add(ThreatParameterMatch("CYBER_HARASSMENT_BLACKMAIL", cyberMatches, 65))
+        }
+
+        // 6. Verbal Harassment check
         val harassmentMatches = VERBAL_HARASSMENT_KEYWORDS.filter { clean.contains(it) }
         if (harassmentMatches.isNotEmpty()) {
             detected.add(ThreatParameterMatch("VERBAL_HARASSMENT", harassmentMatches, 60))
         }
 
-        // 5. Isolated Night check
+        // 7. Isolated Night check
         val nightMatches = ISOLATED_NIGHT_KEYWORDS.filter { clean.contains(it) }
         if (nightMatches.isNotEmpty()) {
             detected.add(ThreatParameterMatch("ISOLATED_DARK_ZONE", nightMatches, 50))

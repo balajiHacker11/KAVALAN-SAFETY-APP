@@ -104,14 +104,18 @@ fun AiAssistantScreen(
 
     val quickScenarios = if (currentLanguage == AppLanguage.TAMIL) listOf(
         "இரவு 10 மணிக்கு ஆள் நடமாட்டமில்லாத தெருவில் என்னை யாரோ பின்தொடர்கிறார்கள்",
-        "ஆட்டோ ஓட்டுநர் தவறான வழியில் சென்று வண்டியை நிறுத்த மறுக்கிறார்",
+        "ஆட்டோ/டாக்ஸி ஓட்டுநர் தவறான வழியில் சென்று வண்டியை நிறுத்த மறுக்கிறார்",
         "சென்னையில் இருட்டான வழியில் பைக் என்னை நெருக்கமாக பின்தொடர்கிறது",
-        "பேருந்து நிலையம் அருகே தெரியாத நபர் அச்சுறுத்தும் வகையில் பேசுகிறார்"
+        "பேருந்து நிலையம் அருகே தெரியாத நபர் அச்சுறுத்தும் வகையில் பேசுகிறார்",
+        "அலுவலகத்தில் சக ஊழியர்/மேலதிகாரி அச்சுறுத்தும் வகையில் துன்புறுத்துகிறார்",
+        "சமூக வலைத்தளத்தில் புகைப்படங்களை வெளியிட்டு பிளாக்மெயில் செய்கிறார்கள்"
     ) else listOf(
         "Walking alone at 10 PM in a quiet lane with someone following behind",
-        "Auto driver took an unfamiliar wrong route and refuses to stop",
+        "Auto/Cab driver took an unfamiliar wrong route and refuses to stop",
         "Bike tailgating me closely in a dimly lit alley in Chennai",
-        "Stranger cornering me near bus stand asking aggressive questions"
+        "Stranger cornering me near bus stand asking aggressive questions",
+        "Workplace superior threatening job and violating personal boundaries",
+        "Cyber blackmail and unauthorized photo leak threats on social media"
     )
 
     LazyColumn(
@@ -209,6 +213,22 @@ fun AiAssistantScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            color = CrimsonPrimary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "🗣️ தமிழ் குரல் உதவி | Tamil Voice Assistant",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CrimsonPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
                         text = strings.voiceInputBtn,
                         fontWeight = FontWeight.Bold,

@@ -44,7 +44,7 @@ class GeminiThreatAssistant {
         }
 
         val systemPrompt = """
-            You are TN Kavalan AI Emergency Threat Evaluator and Tactical Escape Assistant for Women Safety in Tamil Nadu.
+            You are Sentinel AI Emergency Threat Evaluator and Tactical Escape Assistant for Women Safety.
             Your task: Analyze the user's situation prompt and determine threat level, tactical escape route, and action steps.
             
             OUTPUT RULES:
@@ -167,7 +167,7 @@ class GeminiThreatAssistant {
         if (escapeSteps.isEmpty()) {
             escapeSteps.addAll(listOf(
                 "Head immediately towards a well-lit tea shop, petrol bunk, or bus stop.",
-                "Keep phone in hand with finger ready on the TN Kavalan SOS button.",
+                "Keep phone in hand with finger ready on the Sentinel AI SOS button.",
                 "Cross the street to test if person is actively following your path."
             ))
         }
@@ -232,7 +232,7 @@ class GeminiThreatAssistant {
                     summary = "MODERATE RISK: Elevated situational alertness advised.",
                     immediateEscapeSteps = listOf(
                         "Scan surroundings for nearest All Women Police Station (AWPS) or police booth.",
-                        "Keep phone unlocked on TN Kavalan home screen.",
+                        "Keep phone unlocked on Sentinel AI home screen.",
                         "Walk briskly facing incoming traffic."
                     ),
                     tacticalDeescalationAdvice = listOf(
