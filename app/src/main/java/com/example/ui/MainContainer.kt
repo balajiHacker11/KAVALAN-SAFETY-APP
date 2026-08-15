@@ -1,10 +1,17 @@
 package com.example.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,10 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalPolice
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +37,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -45,8 +50,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,15 +63,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
-import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.filled.Language
 import com.example.data.model.AppLanguage
 import com.example.data.model.AppStrings
 import com.example.ui.components.LanguageSelectionDialog
 import com.example.ui.screens.AiAssistantScreen
 import com.example.ui.screens.GuardiansScreen
 import com.example.ui.screens.PoliceStationsScreen
-import com.example.ui.screens.SafetyGuideScreen
 import com.example.ui.screens.SosHomeScreen
 import com.example.ui.theme.CrimsonPrimary
 import com.example.ui.theme.MagentaSecondary
@@ -98,6 +104,27 @@ fun MainContainer(
     val showLanguageDialog by viewModel.showLanguageDialog.collectAsStateWithLifecycle()
     val strings = remember(currentLanguage) { AppStrings.get(currentLanguage) }
 
+    // Ambient pulsing animation for the interactive Tamil Nadu background logo
+    val infiniteTransition = rememberInfiniteTransition(label = "tn_emblem_pulse")
+    val ambientPulseScale by infiniteTransition.animateFloat(
+        initialValue = if (isSirenActive) 0.95f else 1.0f,
+        targetValue = if (isSirenActive) 1.08f else 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isSirenActive) 600 else 3500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ambient_scale"
+    )
+    val ambientAlpha by infiniteTransition.animateFloat(
+        initialValue = if (isSirenActive) 0.18f else 0.08f,
+        targetValue = if (isSirenActive) 0.32f else 0.14f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isSirenActive) 600 else 3500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ambient_alpha"
+    )
+
     LaunchedEffect(userNotice) {
         userNotice?.let { notice ->
             snackbarHostState.showSnackbar(notice)
@@ -121,10 +148,10 @@ fun MainContainer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.img_app_icon),
-                            contentDescription = "App Icon",
+                            painter = painterResource(id = R.drawable.tn_emblem_icon_1786784684200),
+                            contentDescription = "Tamil Nadu Police Emblem Icon",
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(30.dp)
                                 .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -250,27 +277,49 @@ fun MainContainer(
                     ),
                     modifier = Modifier.testTag("nav_tab_guardians")
                 )
-
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = { selectedTab = 4 },
-                    icon = { Icon(Icons.Default.MenuBook, contentDescription = strings.tabGuide) },
-                    label = { Text(strings.tabGuide, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = CrimsonPrimary,
-                        selectedTextColor = CrimsonPrimary,
-                        indicatorColor = CrimsonPrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_guide")
-                )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // Interactive Tamil Nadu Emblem Background Watermark Layer
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.tn_logo_bg_1786784697325),
+                    contentDescription = "Tamil Nadu Emblem Background",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(ambientPulseScale)
+                        .alpha(ambientAlpha),
+                    contentScale = ContentScale.Crop
+                )
+
+                // Soft subtle gradient scrim to ensure complete contrast and accessibility
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.70f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.90f)
+                                )
+                            )
+                        )
+                )
+            }
+
+            // Foreground Screen Content
             when (selectedTab) {
                 0 -> AiAssistantScreen(
                     viewModel = viewModel,
@@ -296,7 +345,6 @@ fun MainContainer(
                     viewModel = viewModel,
                     guardians = guardians
                 )
-                4 -> SafetyGuideScreen(viewModel = viewModel)
             }
         }
     }

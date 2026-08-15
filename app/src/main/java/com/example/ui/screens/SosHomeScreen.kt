@@ -75,6 +75,7 @@ import com.example.data.db.AudioRecordingEntity
 import com.example.data.db.IncidentEvidenceEntity
 import com.example.data.model.AppLanguage
 import com.example.data.model.AppStrings
+import com.example.service.ShakeSensitivity
 import com.example.ui.components.PanicButton
 import com.example.ui.components.PermissionStatusCard
 import com.example.ui.theme.AmberWarning
@@ -105,6 +106,12 @@ fun SosHomeScreen(
     val incidentEvidences by viewModel.incidentEvidencesList.collectAsStateWithLifecycle()
     val currentAmplitude by viewModel.screamDetector.currentAmplitude.collectAsStateWithLifecycle()
 
+    val isShakeListening by viewModel.isShakeListening.collectAsStateWithLifecycle()
+    val shakeGForce by viewModel.shakeGForce.collectAsStateWithLifecycle()
+    val shakeMotionPercent by viewModel.shakeMotionPercent.collectAsStateWithLifecycle()
+    val shakeSensitivity by viewModel.shakeSensitivity.collectAsStateWithLifecycle()
+    val showShakeAlertDialog by viewModel.showShakeAlertDialog.collectAsStateWithLifecycle()
+
     val requiredPermissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.CALL_PHONE,
@@ -122,6 +129,98 @@ fun SosHomeScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
         viewModel.triggerFullMasterSosAlert()
+    }
+
+    // Violent Shake / Motion Emergency Alert Dialog
+    if (showShakeAlertDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissShakeDialog() },
+            icon = {
+                Icon(
+                    Icons.Default.Vibration,
+                    contentDescription = "Violent Shake Alert",
+                    tint = CrimsonPrimary,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = strings.shakeDialogTitle,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp,
+                    color = CrimsonPrimary
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = strings.shakeDialogMessage,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        color = CrimsonPrimary.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Call, contentDescription = null, tint = CrimsonPrimary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Automated 1091 Call Dispatched", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CrimsonPrimary)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.VolumeUp, contentDescription = null, tint = AmberWarning, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Loud Alarm Siren Sounding", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberWarning)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Send, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Offline SOS SMS Dispatched to Guardians", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Mic, contentDescription = null, tint = MagentaSecondary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Audio Evidence Recording Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MagentaSecondary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.dismissShakeDialog()
+                        viewModel.triggerEmergencyCall("1091")
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonPrimary)
+                ) {
+                    Icon(Icons.Default.Call, contentDescription = "Call", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(strings.call1091Btn, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = {
+                            viewModel.dismissShakeDialog()
+                            viewModel.sendOfflineSmsWithEvidence()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
+                    ) {
+                        Text("Re-send SMS", fontSize = 11.sp)
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.dismissShakeDialog() }
+                    ) {
+                        Text(strings.cancelBtn, fontSize = 11.sp)
+                    }
+                }
+            }
+        )
     }
 
     // Scream Emergency Trigger Dialog
@@ -442,6 +541,185 @@ fun SosHomeScreen(
                                         .height(6.dp)
                                         .clip(RoundedCornerShape(3.dp))
                                         .background(if (normalizedAmp > 0.5f) CrimsonPrimary else SuccessGreen)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Violent Shake & Motion Emergency Guard Card
+        item {
+            val shakeCardBg by animateColorAsState(
+                targetValue = if (isShakeListening) CrimsonPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                label = "shake_card_bg"
+            )
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = shakeCardBg),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = if (isShakeListening) 2.dp else 1.dp,
+                        color = if (isShakeListening) CrimsonPrimary else Color.Transparent,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isShakeListening) CrimsonPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Vibration,
+                                    contentDescription = "Shake Motion Guard",
+                                    tint = if (isShakeListening) Color.White else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = strings.shakeDetectorTitle,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isShakeListening) strings.shakeListeningActive else strings.shakeListeningOff,
+                                    fontSize = 11.sp,
+                                    color = if (isShakeListening) CrimsonPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                    fontWeight = if (isShakeListening) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                viewModel.toggleShakeDetection()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isShakeListening) CrimsonPrimary else MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = if (isShakeListening) "Active" else "Enable",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = strings.shakeDetectorSubtitle,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (isShakeListening) {
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Sensitivity Selector
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = strings.shakeSensitivityLabel,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val isMax = shakeSensitivity == ShakeSensitivity.MAXIMUM
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isMax) CrimsonPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.clickable {
+                                        viewModel.setShakeSensitivity(ShakeSensitivity.MAXIMUM)
+                                    }
+                                ) {
+                                    Text(
+                                        text = if (currentLanguage == AppLanguage.TAMIL) "அதிகபட்சம் (Max)" else "Maximum (Violent)",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isMax) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                val isHigh = shakeSensitivity == ShakeSensitivity.HIGH
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isHigh) CrimsonPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.clickable {
+                                        viewModel.setShakeSensitivity(ShakeSensitivity.HIGH)
+                                    }
+                                ) {
+                                    Text(
+                                        text = if (currentLanguage == AppLanguage.TAMIL) "அதிகம் (High)" else "High",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isHigh) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Live Shake Meter
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${strings.shakeLevelLabel}: ${"%.1f".format(shakeGForce)} m/s²",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (shakeMotionPercent > 0.8f) CrimsonPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
+                            ) {
+                                val progress = shakeMotionPercent.coerceIn(0f, 1f)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction = progress.coerceAtLeast(0.04f))
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(
+                                            if (progress > 0.8f) CrimsonPrimary
+                                            else if (progress > 0.4f) AmberWarning
+                                            else SuccessGreen
+                                        )
                                 )
                             }
                         }

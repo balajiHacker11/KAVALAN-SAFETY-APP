@@ -23,6 +23,8 @@ import com.example.data.model.PoliceStationProvider
 import com.example.service.AudioRecorder
 import com.example.service.CameraCaptureManager
 import com.example.service.ScreamDetector
+import com.example.service.ShakeMotionDetector
+import com.example.service.ShakeSensitivity
 import com.example.service.SirenPlayer
 import com.example.service.SosManager
 import com.example.service.SpeechToTextManager
@@ -78,6 +80,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     val audioRecorder = AudioRecorder(application)
     val geminiAssistant = GeminiThreatAssistant()
     val screamDetector = ScreamDetector(application)
+    val shakeMotionDetector = ShakeMotionDetector(application)
     val cameraCaptureManager = CameraCaptureManager(application)
     val speechToTextManager = SpeechToTextManager(application)
     val textToSpeechManager = TextToSpeechManager(application)
@@ -107,9 +110,22 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     private val _showScreamAlertDialog = MutableStateFlow(false)
     val showScreamAlertDialog: StateFlow<Boolean> = _showScreamAlertDialog.asStateFlow()
 
+    // Shake & Motion detection state
+    val isShakeListening: StateFlow<Boolean> = shakeMotionDetector.isListening
+    val shakeGForce: StateFlow<Float> = shakeMotionDetector.currentGForce
+    val shakeMotionPercent: StateFlow<Float> = shakeMotionDetector.currentMotionPercent
+    val shakeSensitivity: StateFlow<ShakeSensitivity> = shakeMotionDetector.sensitivity
+
+    private val _showShakeAlertDialog = MutableStateFlow(false)
+    val showShakeAlertDialog: StateFlow<Boolean> = _showShakeAlertDialog.asStateFlow()
+
     init {
         screamDetector.setScreamListener {
             onScreamOrDistressDetected()
+        }
+
+        shakeMotionDetector.setShakeListener {
+            onShakeEmergencyDetected()
         }
     }
 
@@ -377,6 +393,21 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         textToSpeechManager.speak(text, _currentLanguage.value)
     }
 
+    fun speakThreatResult(result: ThreatAnalysisResult? = _threatResult.value) {
+        if (result == null) return
+        val isTa = _currentLanguage.value == AppLanguage.TAMIL || result.summary.any { it.code in 0x0B80..0x0BFF }
+        val fullSpeechText = textToSpeechManager.buildSolutionSpeechScript(result, isTamil = isTa)
+        textToSpeechManager.speak(fullSpeechText, if (isTa) AppLanguage.TAMIL else AppLanguage.ENGLISH)
+    }
+
+    fun toggleSpeakThreatResult() {
+        if (isSpeakingTts.value) {
+            stopTtsSpeech()
+        } else {
+            speakThreatResult()
+        }
+    }
+
     fun stopTtsSpeech() {
         textToSpeechManager.stop()
     }
@@ -400,11 +431,8 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
             _threatResult.value = geminiResult
             _isEvaluatingThreat.value = false
 
-            // Auto-speak guidance via TTS for fast voice response
-            val spokenSummary = geminiResult.summary
-            val firstStep = geminiResult.immediateEscapeSteps.firstOrNull() ?: ""
-            val fullSpeech = "$spokenSummary $firstStep"
-            textToSpeechManager.speak(fullSpeech, _currentLanguage.value)
+            // Auto-speak all solution tips and tactical escape route with flow
+            speakThreatResult(geminiResult)
         }
     }
 
@@ -480,6 +508,57 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     fun dismissScreamDialog() {
         _showScreamAlertDialog.value = false
         screamDetector.resetScreamState()
+    }
+
+    // --- SHAKE / MOTION EMERGENCY ACTIONS ---
+
+    fun toggleShakeDetection() {
+        if (shakeMotionDetector.isListening.value) {
+            shakeMotionDetector.stopListening()
+            showNotice("Shake & Motion Emergency Guard Paused")
+        } else {
+            shakeMotionDetector.startListening()
+            showNotice("🚨 Violent Shake & Motion Emergency Guard Active!")
+        }
+    }
+
+    fun setShakeSensitivity(sensitivity: ShakeSensitivity) {
+        shakeMotionDetector.setSensitivity(sensitivity)
+        val label = if (_currentLanguage.value == AppLanguage.TAMIL) sensitivity.tamilLabel else sensitivity.label
+        showNotice("Shake sensitivity: $label")
+    }
+
+    private fun onShakeEmergencyDetected() {
+        // 1. Trigger direct call to Women Helpline 1091
+        sosManager.triggerDirectCall("1091")
+
+        // 2. Automatically trigger loud alarm siren
+        if (!_isSirenActive.value) {
+            sirenPlayer.startSiren()
+            _isSirenActive.value = true
+        }
+
+        // 3. Automatically send offline SMS with incident evidence / location to guardians
+        viewModelScope.launch {
+            val guardians = guardiansList.value
+            val latestPhoto = incidentEvidencesList.value.firstOrNull { it.mediaType == "PHOTO" }?.title
+            val latestAudio = audioRecordingsList.value.firstOrNull()?.title
+            val smsResult = sosManager.sendOfflineEvidenceSmsToGuardians(guardians, latestPhoto, latestAudio)
+            showNotice("🚨 MAXIMUM VIOLENT SHAKE DETECTED!\n• Direct 1091 Call Dispatched\n• Siren Sounding\n• $smsResult\n• Audio Evidence Recording Active")
+        }
+
+        // 4. Automatically start audio recording
+        if (!_isRecordingAudio.value) {
+            startAudioEvidenceRecording()
+        }
+
+        // 5. Trigger alert dialog on screen
+        _showShakeAlertDialog.value = true
+    }
+
+    fun dismissShakeDialog() {
+        _showShakeAlertDialog.value = false
+        shakeMotionDetector.resetDetection()
     }
 
     fun captureIncidentPhoto() {
@@ -560,6 +639,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         sirenPlayer.stopSiren()
         audioRecorder.stopPlayback()
         screamDetector.stopListening()
+        shakeMotionDetector.stopListening()
         speechToTextManager.stopListening()
         textToSpeechManager.shutdown()
         if (_isRecordingAudio.value) {

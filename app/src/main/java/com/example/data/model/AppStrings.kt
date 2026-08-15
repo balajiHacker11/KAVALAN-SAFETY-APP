@@ -117,6 +117,18 @@ object AppStrings {
         val permissionsHeader: String
         val permissionsDesc: String
 
+        // Shake & Motion Emergency Detector
+        val shakeDetectorTitle: String
+        val shakeDetectorSubtitle: String
+        val shakeListeningActive: String
+        val shakeListeningOff: String
+        val shakeDialogTitle: String
+        val shakeDialogMessage: String
+        val shakeSensitivityLabel: String
+        val shakeLevelLabel: String
+        val shakeMaximumLevelText: String
+        val shakeHighLevelText: String
+
         // Guide Screen
         val guideHeaderTitle: String
         val guideHeaderSubtitle: String
@@ -230,6 +242,17 @@ object AppStrings {
         override val permissionsHeader = "Camera & Mic Permissions Required"
         override val permissionsDesc = "Grant permissions to capture incident camera evidence, record audio, and send emergency SMS to guardians."
 
+        override val shakeDetectorTitle = "Violent Shake & Motion Emergency Guard"
+        override val shakeDetectorSubtitle = "When phone is shaken at maximum violent level, automatically triggers direct 1091 call, siren alarm, offline SMS to guardians, and audio recording"
+        override val shakeListeningActive = "Motion / Shake Guard Active"
+        override val shakeListeningOff = "Tap to Enable Shake SOS Guard"
+        override val shakeDialogTitle = "🚨 VIOLENT SHAKE / MOTION DETECTED!"
+        override val shakeDialogMessage = "Maximum violent shake detected! Automated Emergency SOS is active: Direct call to 1091, loud siren sounding, offline SMS dispatched to guardians, and audio evidence recording started."
+        override val shakeSensitivityLabel = "Shake Sensitivity Level"
+        override val shakeLevelLabel = "Live Shake Intensity Level"
+        override val shakeMaximumLevelText = "Maximum Violent Shake"
+        override val shakeHighLevelText = "High Shake"
+
         override val guideHeaderTitle = "Women Tactical Safety Guide"
         override val guideHeaderSubtitle = "Essential moves, transit rules, and legal protections"
         override val tabSelfDefense = "Self-Defense Moves"
@@ -341,6 +364,17 @@ object AppStrings {
         override val grantPermissionsBtn = "கேமரா & மைக் அனுமதிகளை வழங்கு"
         override val permissionsHeader = "கேமரா மற்றும் மைக் அனுமதிகள் தேவை"
         override val permissionsDesc = "சம்பவ படங்கள் எடுக்கவும், குரல் பதிவு செய்யவும், பாதுகாவலர்களுக்கு அவசர SMS அனுப்பவும் அனுமதிகளை வழங்கவும்."
+
+        override val shakeDetectorTitle = "அதிவேக அதிர்வு & இயக்க அவசர பாதுகாப்பு"
+        override val shakeDetectorSubtitle = "தொலைபேசி அதிகபட்ச தீவிரமாக குலுக்கப்பட்டால், தானாகவே 1091 மகளிர் காவல் அழைப்பு, அலாரம் ஒலி, பாதுகாவலர்களுக்கு ஆஃப்லைன் SMS மற்றும் ஆடியோ பதிவு தொடங்கும்"
+        override val shakeListeningActive = "இயக்க / அதிர்வு பாதுகாப்பு செயலில் உள்ளது"
+        override val shakeListeningOff = "அதிர்வு SOS பாதுகாப்பை இயக்க அழுத்தவும்"
+        override val shakeDialogTitle = "🚨 தீவிர அதிர்வு / ஆபத்து இயக்கம் கண்டறியப்பட்டது!"
+        override val shakeDialogMessage = "அதிகபட்ச தீவிர அதிர்வு கண்டறியப்பட்டது! தானியங்கி அவசர SOS செயல்படுகிறது: 1091 நேரடி அழைப்பு, பலத்த அலாரம் ஒலி, பாதுகாவலர்களுக்கு ஆஃப்லைன் SMS மற்றும் ஆடியோ ஆதாரப் பதிவு தொடங்கப்பட்டுள்ளது."
+        override val shakeSensitivityLabel = "அதிர்வு உணர்திறன் நிலை"
+        override val shakeLevelLabel = "நேரலை அதிர்வு தீவிரம்"
+        override val shakeMaximumLevelText = "அதிகபட்ச தீவிர அதிர்வு"
+        override val shakeHighLevelText = "அதிக அதிர்வு"
 
         override val guideHeaderTitle = "பெண்கள் பாதுகாப்பு மற்றும் உரிமை வழிகாட்டி"
         override val guideHeaderSubtitle = "முக்கிய தற்காப்பு முறைகள், பயண விதிகள் மற்றும் சட்ட உரிமைகள்"

@@ -80,6 +80,7 @@ class CameraCaptureManager(private val context: Context) {
             FileOutputStream(outputFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
             }
+            bitmap.recycle()
 
             Log.i("CameraCaptureManager", "Incident photo captured and saved: ${outputFile.absolutePath}")
             return outputFile

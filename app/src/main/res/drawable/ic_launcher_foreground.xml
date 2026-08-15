@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/women_safety_app_icon_1785047926539"
+        android:drawable="@drawable/tn_emblem_icon_1786784684200"
         android:gravity="center" />
 </layer-list>

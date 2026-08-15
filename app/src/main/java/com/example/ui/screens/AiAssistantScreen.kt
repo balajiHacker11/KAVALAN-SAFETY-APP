@@ -9,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -451,6 +452,9 @@ fun AiAssistantScreen(
             item {
                 ThreatResultCard(
                     result = threatResult!!,
+                    isSpeaking = isSpeakingTts,
+                    strings = strings,
+                    onToggleSpeak = { viewModel.toggleSpeakThreatResult() },
                     onCallPolice = { viewModel.triggerEmergencyCall("1091") },
                     onSendSms = { viewModel.sendSosSmsToGuardians() },
                     onSoundSiren = { viewModel.triggerFullMasterSosAlert() }
@@ -510,6 +514,9 @@ private fun VoiceMicPulseButton(
 @Composable
 private fun ThreatResultCard(
     result: ThreatAnalysisResult,
+    isSpeaking: Boolean,
+    strings: AppStrings.Strings,
+    onToggleSpeak: () -> Unit,
     onCallPolice: () -> Unit,
     onSendSms: () -> Unit,
     onSoundSiren: () -> Unit
@@ -585,6 +592,76 @@ private fun ThreatResultCard(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Spoken Voice Solution Tips Player Banner
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (isSpeaking) CrimsonPrimary.copy(alpha = 0.12f) else MagentaSecondary.copy(alpha = 0.10f),
+                border = BorderStroke(
+                    1.dp,
+                    if (isSpeaking) CrimsonPrimary.copy(alpha = 0.5f) else MagentaSecondary.copy(alpha = 0.3f)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleSpeak() }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isSpeaking) CrimsonPrimary else MagentaSecondary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isSpeaking) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
+                                contentDescription = "Voice Guide",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = if (isSpeaking) strings.muteResponseBtn else strings.speakResponseBtn,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = if (isSpeaking) CrimsonPrimary else MagentaSecondary
+                            )
+                            Text(
+                                text = if (isSpeaking) "Speaking all solution tips & escape steps..." else "Tap to hear all solution tips with voice flow",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Surface(
+                        color = if (isSpeaking) CrimsonPrimary else MagentaSecondary,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = if (isSpeaking) "MUTE" else "PLAY",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = "Threat Assessment Summary",
